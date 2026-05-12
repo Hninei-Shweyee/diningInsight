@@ -1,0 +1,11 @@
+.env
+.env.*
+!.env.example
+
+firebase-credentials.json
+
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.DS_Store
