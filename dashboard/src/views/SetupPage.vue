@@ -56,21 +56,18 @@
             placeholder="e.g. 123456789012345"
             class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
           />
-          <p class="text-xs text-gray-400 mt-1">Found in Facebook Page Settings → About → Page ID</p>
         </div>
 
         <button
           type="submit"
           :disabled="loading"
-          class="w-full bg-brand hover:bg-brand-light text-white font-medium py-2.5 rounded-lg text-sm transition-colors disabled:opacity-60"
+          class="w-full text-white font-medium py-2.5 rounded-lg text-sm transition-opacity disabled:opacity-60 hover:opacity-90"
+          style="background: #f97316"
         >
           {{ loading ? 'Saving...' : 'Save & Go to Dashboard' }}
         </button>
       </form>
 
-      <p class="mt-4 text-center text-xs text-gray-400">
-        You can update this information later in Settings.
-      </p>
     </div>
   </div>
 </template>

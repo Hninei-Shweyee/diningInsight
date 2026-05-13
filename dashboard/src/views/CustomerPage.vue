@@ -3,7 +3,6 @@
     <!-- Header -->
     <div class="mb-6">
       <h2 class="text-2xl font-bold text-gray-800">Customers</h2>
-      <p class="text-gray-500 text-sm mt-0.5">View customer profiles and order history</p>
     </div>
 
     <!-- ── Filter bar ── -->
@@ -35,7 +34,7 @@
           v-model="sortBy"
           class="text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand"
         >
-          <option value="">🍽️ All Menus</option>
+          <option value="">All Menus</option>
           <option value="most_frequent">Most Frequent</option>
           <option value="least_frequent">Least Frequent</option>
         </select>
@@ -45,7 +44,7 @@
           v-model="duration"
           class="text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand"
         >
-          <option value="all">📅 All Time</option>
+          <option value="all">All Time</option>
           <option value="today">Today</option>
           <option value="week">This Week</option>
           <option value="month">This Month</option>
@@ -88,7 +87,7 @@
           :class="selected?.id === c.id ? 'ring-2 ring-brand' : 'hover:shadow-md'"
         >
           <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-full bg-brand flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+            <div class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0" style="background:#f97316">
               {{ c.name.charAt(0).toUpperCase() }}
             </div>
             <div class="min-w-0 flex-1">
@@ -114,7 +113,7 @@
         <div v-else class="bg-white rounded-xl shadow-sm p-6">
           <!-- Profile header -->
           <div class="flex items-center gap-4 mb-6 pb-6 border-b border-gray-100">
-            <div class="w-16 h-16 rounded-full bg-brand flex items-center justify-center text-white text-2xl font-bold">
+            <div class="w-16 h-16 rounded-full flex items-center justify-center text-white text-2xl font-bold" style="background:#f97316">
               {{ selected.name.charAt(0).toUpperCase() }}
             </div>
             <div>

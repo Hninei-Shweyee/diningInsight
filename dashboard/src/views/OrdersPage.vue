@@ -4,14 +4,8 @@
     <div class="flex items-center justify-between mb-6">
       <div>
         <h2 class="text-2xl font-bold text-gray-800">Orders</h2>
-        <p class="text-gray-500 text-sm mt-0.5">Manage and track customer orders</p>
       </div>
-      <div class="flex items-center gap-3">
-        <span class="text-sm text-gray-500">{{ filtered.length }} orders</span>
-        <button @click="store.fetchOrders(); resetFilters()" class="text-sm bg-brand text-white px-4 py-2 rounded-lg hover:bg-brand-light transition-colors">
-          Refresh
-        </button>
-      </div>
+      <span class="text-sm text-gray-500">{{ filtered.length }} orders</span>
     </div>
 
     <!-- ── Filter bar ── -->
@@ -35,7 +29,7 @@
           v-model="paymentFilter"
           class="text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand"
         >
-          <option value="">💳 All Payments</option>
+          <option value="">All Payments</option>
           <option value="Cash">💵 Cash</option>
           <option value="Bank Transfer">🏦 Bank Transfer</option>
         </select>
@@ -56,7 +50,7 @@
           v-model="statusFilter"
           class="text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand"
         >
-          <option value="">📋 All Statuses</option>
+          <option value="">All Statuses</option>
           <option value="pending">Pending</option>
           <option value="cooking">Cooking</option>
           <option value="ready">Ready</option>

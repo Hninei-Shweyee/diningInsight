@@ -2,7 +2,6 @@
   <div class="p-4 sm:p-6">
     <div class="mb-6">
       <h2 class="text-2xl font-bold text-gray-800">Insights</h2>
-      <p class="text-gray-500 text-sm mt-0.5">Business analytics and sales trends</p>
     </div>
 
     <div v-if="loading" class="text-center py-16 text-gray-400">Loading insights…</div>

@@ -9,9 +9,10 @@ const routes = [
   { path: '/orders',         name: 'Orders',        component: () => import('../views/OrdersPage.vue'),        meta: { requiresAuth: true } },
   { path: '/customers',      name: 'Customers',     component: () => import('../views/CustomerPage.vue'),      meta: { requiresAuth: true } },
   { path: '/menu',           name: 'Menu',          component: () => import('../views/MenuPage.vue'),          meta: { requiresAuth: true } },
-  { path: '/insights',       name: 'Insights',      component: () => import('../views/InsightsPage.vue'),      meta: { requiresAuth: true } },
+  { path: '/dashboard',      name: 'Dashboard',     component: () => import('../views/InsightsPage.vue'),      meta: { requiresAuth: true } },
+  
   { path: '/auto-messaging', name: 'AutoMessaging', component: () => import('../views/AutoMessagingPage.vue'), meta: { requiresAuth: true } },
-  { path: '/:pathMatch(.*)*', redirect: '/orders' },
+  { path: '/:pathMatch(.*)*', redirect: '/dashboard' },
 ]
 
 const router = createRouter({
@@ -23,7 +24,7 @@ const router = createRouter({
 router.beforeEach((to) => {
   const auth = useAuthStore()
   if (to.meta.requiresAuth && !auth.token) return '/login'
-  if (to.path === '/login'  &&  auth.token) return '/orders'
+  if (to.path === '/login'  &&  auth.token) return '/dashboard'
 })
 
 export default router

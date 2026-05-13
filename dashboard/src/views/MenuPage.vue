@@ -4,11 +4,11 @@
     <div class="flex items-center justify-between mb-6">
       <div>
         <h2 class="text-2xl font-bold text-gray-800">Menu Management</h2>
-        <p class="text-gray-500 text-sm mt-0.5">Add, edit, and manage your restaurant menu</p>
       </div>
       <button
         @click="openModal(null)"
-        class="bg-brand text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-brand-light transition-colors"
+        class="text-white text-sm font-medium px-4 py-2 rounded-lg transition-opacity hover:opacity-90"
+        style="background:#f97316"
       >
         + Add Item
       </button>
@@ -22,8 +22,9 @@
         @click="catFilter = cat"
         class="px-4 py-1.5 rounded-full text-sm font-medium transition-colors"
         :class="catFilter === cat
-          ? 'bg-brand text-white'
+          ? 'text-white'
           : 'bg-white text-gray-600 shadow-sm hover:bg-gray-50'"
+        :style="catFilter === cat ? 'background:#f97316' : ''"
       >
         {{ cat }}
       </button>
@@ -88,7 +89,7 @@
               @click="openModal(item)"
               class="flex-1 text-xs border border-gray-200 rounded-lg py-1.5 text-gray-600 hover:bg-gray-50 transition-colors"
             >
-              ✏️ Edit
+              Edit
             </button>
             <button
               @click="confirmDelete(item)"
@@ -172,7 +173,7 @@
             <div class="flex gap-2">
               <label class="flex-1 cursor-pointer">
                 <div class="border border-dashed border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-500 text-center hover:bg-gray-50 transition-colors">
-                  {{ uploadingImage ? 'Uploading…' : '📁 Upload image' }}
+                  {{ uploadingImage ? 'Uploading…' : 'Upload image' }}
                 </div>
                 <input
                   type="file"
@@ -198,13 +199,13 @@
           <div class="flex items-center justify-between py-1">
             <div>
               <p class="text-sm font-medium text-gray-700">Availability</p>
-              <p class="text-xs text-gray-400">Show this item to customers</p>
             </div>
             <button
               type="button"
               @click="form.is_available = !form.is_available"
               class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors"
-              :class="form.is_available ? 'bg-brand' : 'bg-gray-300'"
+              :style="form.is_available ? 'background:#f97316' : ''"
+              :class="form.is_available ? '' : 'bg-gray-300'"
             >
               <span
                 class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform"
@@ -217,13 +218,13 @@
           <div class="flex items-center justify-between py-1 border-t border-gray-100 pt-3">
             <div>
               <p class="text-sm font-medium text-gray-700">⭐ Today Special / Promotional</p>
-              <p class="text-xs text-gray-400">Highlight this item on the menu</p>
             </div>
             <button
               type="button"
               @click="form.is_special = !form.is_special"
               class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors"
-              :class="form.is_special ? 'bg-yellow-400' : 'bg-gray-300'"
+              :style="form.is_special ? 'background:#f97316' : ''"
+              :class="form.is_special ? '' : 'bg-gray-300'"
             >
               <span
                 class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform"
@@ -249,7 +250,8 @@
             <button
               type="submit"
               :disabled="saving || uploadingImage"
-              class="flex-1 bg-brand text-white text-sm font-medium py-2.5 rounded-lg hover:bg-brand-light transition-colors disabled:opacity-60"
+              class="flex-1 text-white text-sm font-medium py-2.5 rounded-lg transition-opacity hover:opacity-90 disabled:opacity-60"
+              style="background:#f97316"
             >
               {{ saving ? 'Saving…' : (editingItem ? 'Save Changes' : 'Add Item') }}
             </button>
