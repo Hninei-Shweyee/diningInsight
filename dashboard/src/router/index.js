@@ -1,4 +1,4 @@
-// router/index.js — Vue Router with auth guard
+
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 
@@ -20,7 +20,7 @@ const router = createRouter({
   routes,
 })
 
-// Auth guard — redirect to login if not authenticated
+
 router.beforeEach((to) => {
   const auth = useAuthStore()
   if (to.meta.requiresAuth && !auth.token) return '/login'

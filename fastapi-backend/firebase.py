@@ -1,4 +1,3 @@
-# firebase.py — Firebase Admin SDK setup for token verification
 import firebase_admin
 from firebase_admin import credentials, auth
 from fastapi import HTTPException, Security
@@ -8,7 +7,6 @@ import os
 
 load_dotenv()
 
-# Initialize Firebase app once at startup
 cred_path = os.getenv("FIREBASE_CREDENTIALS_PATH", "firebase-credentials.json")
 if os.path.exists(cred_path) and not firebase_admin._apps:
     cred = credentials.Certificate(cred_path)

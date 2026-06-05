@@ -1,4 +1,3 @@
-// stores/orders.js — Order state + actions
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { getOrders, updateStatus } from '../api'
@@ -15,7 +14,7 @@ export const useOrdersStore = defineStore('orders', () => {
       const res = await getOrders(status)
       orders.value = res.data
     } catch (e) {
-      error.value = e.message
+      error.value = e.response?.data?.detail || e.message || 'Failed to load orders'
     } finally {
       loading.value = false
     }
@@ -23,7 +22,7 @@ export const useOrdersStore = defineStore('orders', () => {
 
   async function changeStatus(orderId, newStatus) {
     await updateStatus(orderId, newStatus)
-    // Update locally so UI refreshes without a full reload
+    
     const order = orders.value.find(o => o.id === orderId)
     if (order) order.status = newStatus
   }

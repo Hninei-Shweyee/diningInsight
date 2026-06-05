@@ -1,7 +1,6 @@
 <template>
   <div class="min-h-screen flex items-center justify-center bg-gray-50">
     <div class="bg-white rounded-2xl shadow-lg p-8 w-full max-w-md">
-      <!-- Header -->
       <div class="text-center mb-8">
         <div class="w-14 h-14 bg-brand rounded-2xl flex items-center justify-center mx-auto mb-3">
           <span class="text-white text-2xl">🏪</span>
@@ -10,12 +9,10 @@
         <p class="text-gray-500 text-sm mt-1">Tell us about your restaurant</p>
       </div>
 
-      <!-- Error banner -->
       <div v-if="error" class="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm mb-4">
         {{ error }}
       </div>
 
-      <!-- Form -->
       <form @submit.prevent="handleSetup" class="space-y-4">
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Restaurant Name</label>
@@ -112,13 +109,10 @@ async function handleSetup() {
       return
     }
 
-    // Mark setup as done so login knows to skip the setup page
     localStorage.setItem(`setup_done_${currentUser.uid}`, 'true')
 
-    // Navigate immediately — don't block on Firestore
     router.push('/orders')
 
-    // Save profile in background (non-blocking)
     import('firebase/firestore').then(({ getFirestore, doc, setDoc }) => {
       setDoc(doc(getFirestore(app), 'restaurants', currentUser.uid), {
         name:      restaurantName.value,

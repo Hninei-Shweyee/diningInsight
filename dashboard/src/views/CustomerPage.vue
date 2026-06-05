@@ -1,13 +1,11 @@
 <template>
   <div class="p-4 sm:p-6">
-    <!-- Header -->
+    
     <div class="mb-6">
       <h2 class="text-2xl font-bold text-gray-800">Customers</h2>
     </div>
 
-    <!-- ── Filter bar ── -->
     <div class="bg-white rounded-xl shadow-sm p-4 mb-5 space-y-3">
-      <!-- Row 1: Search + Clear -->
       <div class="flex flex-wrap gap-3">
         <div class="relative flex-1 min-w-[180px]">
           <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">🔍</span>
@@ -27,19 +25,16 @@
         </button>
       </div>
 
-      <!-- Row 2: Dropdowns -->
       <div class="flex flex-wrap gap-3">
-        <!-- Preferred Menu / Frequency -->
         <select
           v-model="sortBy"
           class="text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand"
         >
-          <option value="">All Menus</option>
-          <option value="most_frequent">Most Frequent</option>
-          <option value="least_frequent">Least Frequent</option>
+          <option value="">All Customers</option>
+          <option value="most_frequent">Most Orders</option>
+          <option value="least_frequent">Least Orders</option>
         </select>
 
-        <!-- Duration -->
         <select
           v-model="duration"
           class="text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand"
@@ -52,7 +47,6 @@
           <option value="custom">Custom Range</option>
         </select>
 
-        <!-- Custom date range inputs -->
         <template v-if="duration === 'custom'">
           <input
             v-model="customFrom"
@@ -76,7 +70,6 @@
     <div v-if="loading" class="text-center py-16 text-gray-400">Loading customers…</div>
 
     <div v-else class="flex flex-col lg:flex-row gap-5">
-      <!-- Customer list -->
       <div class="w-full lg:w-72 lg:flex-shrink-0 space-y-2">
         <p class="text-xs text-gray-400 mb-2">{{ filtered.length }} customers</p>
         <div
@@ -104,14 +97,12 @@
         <p v-if="filtered.length === 0" class="text-center text-gray-400 py-8 text-sm">No customers found.</p>
       </div>
 
-      <!-- Customer profile drawer -->
       <div class="flex-1">
         <div v-if="!selected" class="bg-white rounded-xl shadow-sm h-64 flex items-center justify-center text-gray-400">
           Select a customer to view their profile
         </div>
 
         <div v-else class="bg-white rounded-xl shadow-sm p-6">
-          <!-- Profile header -->
           <div class="flex items-center gap-4 mb-6 pb-6 border-b border-gray-100">
             <div class="w-16 h-16 rounded-full flex items-center justify-center text-white text-2xl font-bold" style="background:#f97316">
               {{ selected.name.charAt(0).toUpperCase() }}
@@ -127,7 +118,6 @@
             </div>
           </div>
 
-          <!-- Contact info -->
           <div class="grid grid-cols-2 gap-4 mb-6">
             <div class="bg-gray-50 rounded-lg p-3">
               <p class="text-xs text-gray-500 mb-1">📞 Phone</p>
@@ -145,7 +135,6 @@
             </div>
           </div>
 
-          <!-- Order history -->
           <div>
             <h4 class="font-semibold text-gray-700 mb-3 text-sm">Order History</h4>
             <div class="space-y-2 max-h-72 overflow-y-auto pr-1">
@@ -185,7 +174,6 @@ const selected  = ref(null)
 const loading   = ref(true)
 const fetchError = ref(null)
 
-// Filters
 const search     = ref('')
 const sortBy     = ref('')
 const duration   = ref('all')
@@ -196,7 +184,6 @@ const hasActiveFilters = computed(() =>
   search.value || sortBy.value || duration.value !== 'all'
 )
 
-// Client-side filter by search
 const filtered = computed(() => {
   const q = search.value.toLowerCase()
   return customers.value.filter(c => {
@@ -205,10 +192,16 @@ const filtered = computed(() => {
   })
 })
 
-// Build date_from / date_to from the selected duration
+function toDateInputValue(date) {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 function getDateRange() {
   const now   = new Date()
-  const today = now.toISOString().split('T')[0]
+  const today = toDateInputValue(now)
 
   if (duration.value === 'all')   return {}
   if (duration.value === 'today') return { date_from: today, date_to: today }
@@ -216,7 +209,7 @@ function getDateRange() {
   if (duration.value === 'week') {
     const start = new Date(now)
     start.setDate(now.getDate() - now.getDay())
-    return { date_from: start.toISOString().split('T')[0], date_to: today }
+    return { date_from: toDateInputValue(start), date_to: today }
   }
 
   if (duration.value === 'month') {
@@ -228,8 +221,8 @@ function getDateRange() {
     const first = new Date(now.getFullYear(), now.getMonth() - 1, 1)
     const last  = new Date(now.getFullYear(), now.getMonth(), 0)
     return {
-      date_from: first.toISOString().split('T')[0],
-      date_to:   last.toISOString().split('T')[0],
+      date_from: toDateInputValue(first),
+      date_to:   toDateInputValue(last),
     }
   }
 
@@ -246,8 +239,18 @@ async function fetchCustomers() {
   try {
     const params = { ...getDateRange() }
     if (sortBy.value) params.sort_by = sortBy.value
+    const currentId = selected.value?.id
     const res = await getCustomers(params)
     customers.value = res.data
+    const nextSelected = currentId
+      ? customers.value.find(c => c.id === currentId)
+      : customers.value[0]
+
+    if (nextSelected) {
+      await selectCustomer(nextSelected.id)
+    } else {
+      selected.value = null
+    }
   } catch (e) {
     fetchError.value = e.response?.data?.detail || 'Failed to load customers. Please try again.'
   } finally {
@@ -255,12 +258,10 @@ async function fetchCustomers() {
   }
 }
 
-// Re-fetch when sortBy or duration changes (skip custom until both dates filled)
 watch([sortBy, duration], () => {
   if (duration.value !== 'custom') fetchCustomers()
 })
 
-// Re-fetch when custom range is fully filled
 watch([customFrom, customTo], () => {
   if (duration.value === 'custom' && customFrom.value && customTo.value) fetchCustomers()
 })
@@ -275,7 +276,7 @@ function resetFilters() {
 }
 
 async function selectCustomer(id) {
-  const res = await getCustomer(id)
+  const res = await getCustomer(id, getDateRange())
   selected.value = res.data
 }
 

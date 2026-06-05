@@ -1,6 +1,5 @@
 <template>
   <div class="p-4 sm:p-6">
-    <!-- Header -->
     <div class="flex items-center justify-between mb-6">
       <div>
         <h2 class="text-2xl font-bold text-gray-800">Orders</h2>
@@ -8,12 +7,9 @@
       <span class="text-sm text-gray-500">{{ filtered.length }} orders</span>
     </div>
 
-    <!-- ── Filter bar ── -->
     <div class="bg-white rounded-xl shadow-sm p-4 mb-5 space-y-3">
 
-      <!-- Row 1: Search + Payment -->
       <div class="flex flex-wrap gap-3">
-        <!-- Search by customer name / item -->
         <div class="relative flex-1 min-w-[180px]">
           <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">🔍</span>
           <input
@@ -24,17 +20,15 @@
           />
         </div>
 
-        <!-- Payment method filter -->
         <select
           v-model="paymentFilter"
           class="text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand"
         >
           <option value="">All Payments</option>
-          <option value="Cash">💵 Cash</option>
-          <option value="Bank Transfer">🏦 Bank Transfer</option>
+          <option value="Cash">Cash</option>
+          <option value="Bank Transfer">Bank Transfer</option>
         </select>
 
-        <!-- Reset button -->
         <button
           v-if="hasActiveFilters"
           @click="resetFilters"
@@ -44,7 +38,6 @@
         </button>
       </div>
 
-      <!-- Row 2: Status + Date range -->
       <div class="flex flex-wrap gap-3">
         <select
           v-model="statusFilter"
@@ -71,15 +64,23 @@
       </div>
     </div>
 
-    <!-- Loading -->
     <div v-if="store.loading" class="text-center py-16 text-gray-400">Loading orders…</div>
 
-    <!-- Empty -->
+    <div v-else-if="store.error" class="bg-white rounded-xl shadow-sm p-8 text-center">
+      <p class="text-sm font-medium text-red-600">Could not load orders.</p>
+      <p class="mt-2 text-sm text-gray-500">{{ store.error }}</p>
+      <button
+        @click="store.fetchOrders(statusFilter || null)"
+        class="mt-4 text-sm bg-brand text-white px-4 py-2 rounded-lg hover:bg-brand-dark transition-colors"
+      >
+        Retry
+      </button>
+    </div>
+
     <div v-else-if="filtered.length === 0" class="text-center py-16 text-gray-400">
       No orders match your filters.
     </div>
 
-    <!-- Table -->
     <div v-else class="bg-white rounded-xl shadow-sm overflow-x-auto">
       <table class="w-full text-sm min-w-[700px]">
         <thead>
@@ -161,10 +162,8 @@ function resetFilters() {
   dateTo.value        = ''
 }
 
-// Client-side filtering
 const filtered = computed(() => {
   return store.orders.filter(order => {
-    // Search: customer name or item name
     if (search.value) {
       const q = search.value.toLowerCase()
       const matchName  = order.customer_name?.toLowerCase().includes(q)
@@ -172,13 +171,10 @@ const filtered = computed(() => {
       if (!matchName && !matchItem) return false
     }
 
-    // Status
     if (statusFilter.value && order.status !== statusFilter.value) return false
 
-    // Payment
     if (paymentFilter.value && order.payment_method !== paymentFilter.value) return false
 
-    // Date range
     if (dateFrom.value || dateTo.value) {
       const orderDate = order.ordered_at.split('T')[0]
       if (dateFrom.value && orderDate < dateFrom.value) return false

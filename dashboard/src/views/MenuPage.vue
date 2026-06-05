@@ -1,6 +1,5 @@
 <template>
   <div class="p-4 sm:p-6">
-    <!-- Header -->
     <div class="flex items-center justify-between mb-6">
       <div>
         <h2 class="text-2xl font-bold text-gray-800">Menu Management</h2>
@@ -14,7 +13,6 @@
       </button>
     </div>
 
-    <!-- Category filter tabs -->
     <div class="flex flex-wrap gap-2 mb-5">
       <button
         v-for="cat in categories"
@@ -30,15 +28,12 @@
       </button>
     </div>
 
-    <!-- Loading -->
     <div v-if="loading" class="text-center py-16 text-gray-400">Loading menu…</div>
 
-    <!-- Empty -->
     <div v-else-if="filtered.length === 0" class="text-center py-16 text-gray-400">
       No menu items found.
     </div>
 
-    <!-- Grid -->
     <div v-else class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
       <div
         v-for="item in filtered"
@@ -46,7 +41,6 @@
         class="bg-white rounded-xl shadow-sm overflow-hidden flex flex-col"
         :class="!item.is_available ? 'opacity-60' : ''"
       >
-        <!-- Image -->
         <div class="h-36 bg-gray-100 flex items-center justify-center overflow-hidden relative">
           <img
             v-if="item.image_url"
@@ -57,7 +51,6 @@
           />
           <span v-else class="text-5xl">🍽️</span>
 
-          <!-- Special badge -->
           <span
             v-if="item.is_special"
             class="absolute top-2 left-2 bg-yellow-400 text-yellow-900 text-xs font-bold px-2 py-0.5 rounded-full"
@@ -66,7 +59,6 @@
           </span>
         </div>
 
-        <!-- Info -->
         <div class="p-3 flex flex-col flex-1">
           <p class="font-semibold text-gray-800 text-sm truncate">{{ item.name }}</p>
           <p class="text-xs text-gray-400 mb-2">{{ item.category }}</p>
@@ -83,7 +75,6 @@
             </span>
           </div>
 
-          <!-- Actions -->
           <div class="flex gap-2 mt-3">
             <button
               @click="openModal(item)"
@@ -102,7 +93,6 @@
       </div>
     </div>
 
-    <!-- ── Add / Edit Modal ── -->
     <div
       v-if="showModal"
       class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
@@ -115,7 +105,6 @@
 
         <form @submit.prevent="saveItem" class="space-y-4">
 
-          <!-- Name -->
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Item Name *</label>
             <input
@@ -127,7 +116,6 @@
             />
           </div>
 
-          <!-- Category -->
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Category *</label>
             <select
@@ -142,7 +130,6 @@
             </select>
           </div>
 
-          <!-- Price -->
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Price (THB) *</label>
             <input
@@ -156,11 +143,9 @@
             />
           </div>
 
-          <!-- Image -->
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Food Image</label>
 
-            <!-- Preview -->
             <div v-if="imagePreview || form.image_url" class="mb-2 h-32 bg-gray-100 rounded-lg overflow-hidden">
               <img
                 :src="imagePreview || form.image_url"
@@ -169,7 +154,6 @@
               />
             </div>
 
-            <!-- File upload -->
             <div class="flex gap-2">
               <label class="flex-1 cursor-pointer">
                 <div class="border border-dashed border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-500 text-center hover:bg-gray-50 transition-colors">
@@ -185,7 +169,6 @@
               </label>
             </div>
 
-            <!-- Or URL -->
             <p class="text-xs text-gray-400 text-center my-1">or paste URL below</p>
             <input
               v-model="form.image_url"
@@ -195,7 +178,6 @@
             />
           </div>
 
-          <!-- Availability -->
           <div class="flex items-center justify-between py-1">
             <div>
               <p class="text-sm font-medium text-gray-700">Availability</p>
@@ -214,7 +196,6 @@
             </button>
           </div>
 
-          <!-- Today Special / Promotional -->
           <div class="flex items-center justify-between py-1 border-t border-gray-100 pt-3">
             <div>
               <p class="text-sm font-medium text-gray-700">⭐ Today Special / Promotional</p>
@@ -233,12 +214,10 @@
             </button>
           </div>
 
-          <!-- Error -->
           <p v-if="formError" class="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">
             {{ formError }}
           </p>
 
-          <!-- Buttons -->
           <div class="flex gap-3 pt-2">
             <button
               type="button"
@@ -260,7 +239,6 @@
       </div>
     </div>
 
-    <!-- ── Delete Confirmation ── -->
     <div
       v-if="deleteTarget"
       class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
@@ -311,7 +289,6 @@ const uploadingImage = ref(false)
 const catFilter  = ref('All')
 const categories = ['All', 'Burger', 'Fried Chicken', 'Drinks', 'Combo']
 
-// reactive keeps individual property bindings stable across resets
 const form = reactive({
   name:         '',
   category:     'Burger',
@@ -408,7 +385,6 @@ async function handleImageUpload(event) {
 async function saveItem() {
   formError.value = ''
   saving.value    = true
-  // build a plain object so axios serialises it cleanly
   const payload = {
     name:         form.name,
     category:     form.category,

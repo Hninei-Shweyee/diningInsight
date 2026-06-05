@@ -5,7 +5,7 @@
       <p class="text-gray-500 text-sm mt-0.5">Send targeted promotions to customer segments via Messenger</p>
     </div>
 
-    <!-- Coming soon banner -->
+    
     <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6 flex items-center gap-3">
       <span class="text-2xl">🚧</span>
       <div>
@@ -17,9 +17,8 @@
       </div>
     </div>
 
-    <!-- Preview UI (disabled) -->
+    
     <div class="opacity-50 pointer-events-none space-y-5">
-      <!-- Target segment selector -->
       <div class="bg-white rounded-xl p-6 shadow-sm">
         <h3 class="font-semibold text-gray-700 mb-4">1. Select Target Segment</h3>
         <div class="grid grid-cols-3 gap-3">
@@ -36,7 +35,6 @@
         </div>
       </div>
 
-      <!-- Message type -->
       <div class="bg-white rounded-xl p-6 shadow-sm">
         <h3 class="font-semibold text-gray-700 mb-4">2. Choose Message Type</h3>
         <div class="grid grid-cols-2 gap-3">
@@ -54,7 +52,6 @@
         </div>
       </div>
 
-      <!-- Message preview -->
       <div class="bg-white rounded-xl p-6 shadow-sm">
         <h3 class="font-semibold text-gray-700 mb-4">3. Message Preview</h3>
         <div class="bg-gray-50 rounded-lg p-4 text-sm text-gray-700 leading-relaxed border border-gray-200">

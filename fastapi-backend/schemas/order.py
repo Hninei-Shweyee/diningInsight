@@ -37,7 +37,6 @@ class OrderOut(BaseModel):
     status:         str
     ordered_at:     datetime
     items:          List[OrderItemOut] = []
-    # Customer fields joined for dashboard display
     customer_name:  str | None = None
     customer_phone: str | None = None
     customer_address: str | None = None

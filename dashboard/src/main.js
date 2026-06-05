@@ -10,7 +10,6 @@ app.use(pinia)
 app.use(router)
 app.mount('#app')
 
-// Keep Firebase token fresh so API calls don't fail with 401
 ;(async () => {
   const { initializeApp, getApps, getApp } = await import('firebase/app')
   const { getAuth, onIdTokenChanged }       = await import('firebase/auth')
@@ -29,7 +28,7 @@ app.mount('#app')
   const fbAuth = getAuth(fbApp)
   const auth   = useAuthStore()
 
-  // Fires on login, logout, and every time Firebase silently refreshes the token
+  
   onIdTokenChanged(fbAuth, async (user) => {
     if (user) {
       const idToken = await user.getIdToken()

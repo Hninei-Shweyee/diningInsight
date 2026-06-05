@@ -1,4 +1,3 @@
-# routers/auth.py — Firebase token verification endpoint
 from fastapi import APIRouter, Depends
 from firebase import verify_firebase_token
 

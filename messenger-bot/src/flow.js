@@ -1,6 +1,3 @@
-// flow.js — Conversation flow logic for DiningInsight ordering bot
-// This file is the brain of the bot. It reads the current state for a user,
-// decides what to do with their message, and sends the appropriate reply.
 
 const { getState, setState, clearState } = require('./state');
 const {
@@ -11,26 +8,14 @@ const {
 } = require('./messenger');
 const { sendOrderToAPI } = require('./api');
 
-// Special keywords that reset the conversation from any step
 const RESET_KEYWORDS = ['restart', 'cancel', 'order'];
 
-// ---------------------------------------------------------------------------
-// Main entry point — called by webhook.js for every incoming event
-// ---------------------------------------------------------------------------
 
-/**
- * Routes an incoming event to the correct step handler.
- * @param {string} senderId - Messenger user ID
- * @param {string|null} messageText - Text sent by the user (null for postbacks)
- * @param {string|null} postbackPayload - Postback payload (null for text messages)
- */
 async function handleMessage(senderId, messageText, postbackPayload) {
   try {
-    // Normalize text: trim whitespace and lowercase for keyword checks
     const text = messageText ? messageText.trim() : null;
     const lowerText = text ? text.toLowerCase() : '';
 
-    // --- Special reset commands (work at any step) ---
     if (text && RESET_KEYWORDS.includes(lowerText)) {
       clearState(senderId);
       await sendWelcome(senderId);
@@ -39,7 +24,6 @@ async function handleMessage(senderId, messageText, postbackPayload) {
 
     const state = getState(senderId);
 
-    // --- Route to the correct step handler ---
     switch (state.step) {
       case 'waiting_name':
         await handleWaitingName(senderId, text);
@@ -54,13 +38,10 @@ async function handleMessage(senderId, messageText, postbackPayload) {
         break;
 
       case 'waiting_category':
-        // Category arrives as a quick reply — payload is the uppercased label
-        // e.g. payload "🍔_BURGER" or text "🍔 Burger"
         await handleWaitingCategory(senderId, text, postbackPayload);
         break;
 
       case 'waiting_item':
-        // Item selection arrives as a postback: ORDER_ITEM::name::price
         await handleWaitingItem(senderId, postbackPayload);
         break;
 
@@ -69,29 +50,22 @@ async function handleMessage(senderId, messageText, postbackPayload) {
         break;
 
       case 'waiting_payment':
-        // Payment arrives as a quick reply payload: "💵_CASH" or "🏦_BANK_TRANSFER"
         await handleWaitingPayment(senderId, text, postbackPayload);
         break;
 
       default:
-        // Unknown/corrupt state — reset and start fresh
         clearState(senderId);
         await sendWelcome(senderId);
     }
   } catch (err) {
     console.error('[Flow] Unhandled error for user', senderId, err);
-    // Reset state to prevent the user getting permanently stuck
     clearState(senderId);
     await sendTextMessage(senderId, 'Sorry, something went wrong. Let\'s start over!');
     await sendWelcome(senderId);
   }
 }
 
-// ---------------------------------------------------------------------------
-// Step handlers
-// ---------------------------------------------------------------------------
 
-/** Sends the welcome message and sets state to waiting_name. */
 async function sendWelcome(senderId) {
   setState(senderId, { step: 'waiting_name' });
   await sendTextMessage(
@@ -100,7 +74,6 @@ async function sendWelcome(senderId) {
   );
 }
 
-/** STEP 1 — Receive the customer's name. */
 async function handleWaitingName(senderId, text) {
   if (!text) {
     await sendTextMessage(senderId, 'Please tell me your name to get started.');
@@ -114,14 +87,12 @@ async function handleWaitingName(senderId, text) {
   );
 }
 
-/** STEP 2 — Receive and validate the customer's phone number. */
 async function handleWaitingPhone(senderId, text) {
   if (!text) {
     await sendTextMessage(senderId, 'Please send your phone number. (e.g. 0812345678)');
     return;
   }
 
-  // Phone must be 9–10 digits only
   const phoneRegex = /^\d{9,10}$/;
   if (!phoneRegex.test(text)) {
     await sendTextMessage(
@@ -135,7 +106,6 @@ async function handleWaitingPhone(senderId, text) {
   await sendTextMessage(senderId, 'Got it! 📍\nPlease send your delivery address.');
 }
 
-/** STEP 3 — Receive the customer's delivery address. */
 async function handleWaitingAddress(senderId, text) {
   if (!text) {
     await sendTextMessage(senderId, 'Please send your delivery address.');
@@ -146,10 +116,7 @@ async function handleWaitingAddress(senderId, text) {
   await sendMenuCategories(senderId);
 }
 
-/** STEP 4 — Handle category selection (arrives as a quick reply). */
 async function handleWaitingCategory(senderId, text, postbackPayload) {
-  // Quick reply text arrives as e.g. "🍔 Burger" — extract the category name
-  // by stripping the leading emoji and space (everything after the first space)
   const rawInput = text || '';
   const categoryName = extractCategoryName(rawInput);
 
@@ -166,23 +133,15 @@ async function handleWaitingCategory(senderId, text, postbackPayload) {
   await sendMenuItems(senderId, categoryName);
 }
 
-/**
- * Strips the emoji prefix from a category quick reply label.
- * "🍔 Burger" → "Burger", "🍗 Fried Chicken" → "Fried Chicken"
- * Returns null if the input doesn't match any known category.
- */
 function extractCategoryName(input) {
   const VALID_CATEGORIES = ['Burger', 'Fried Chicken', 'Drinks', 'Combo'];
-  // Try matching by checking if the input ends with a known category name
   for (const cat of VALID_CATEGORIES) {
     if (input.endsWith(cat)) return cat;
-    // Also accept the bare category name typed directly
     if (input.trim() === cat) return cat;
   }
   return null;
 }
 
-/** STEP 5 — Handle "Order This" postback and ask for quantity. */
 async function handleWaitingItem(senderId, postbackPayload) {
   if (!postbackPayload || !postbackPayload.startsWith('ORDER_ITEM::')) {
     await sendTextMessage(
@@ -192,7 +151,6 @@ async function handleWaitingItem(senderId, postbackPayload) {
     return;
   }
 
-  // Payload format: ORDER_ITEM::{item name}::{price}
   const parts = postbackPayload.split('::');
   const itemName = parts[1];
   const itemPrice = parseInt(parts[2], 10);
@@ -209,7 +167,6 @@ async function handleWaitingItem(senderId, postbackPayload) {
   );
 }
 
-/** STEP 6 — Receive and validate quantity, then show the order summary. */
 async function handleWaitingQuantity(senderId, text) {
   const quantity = parseInt(text, 10);
 
@@ -241,9 +198,7 @@ async function handleWaitingQuantity(senderId, text) {
   await sendQuickReply(senderId, summary, ['💵 Cash', '🏦 Bank Transfer']);
 }
 
-/** STEP 7 — Receive payment method, submit order, confirm to customer. */
 async function handleWaitingPayment(senderId, text, postbackPayload) {
-  // Payment arrives as quick reply text: "💵 Cash" or "🏦 Bank Transfer"
   const input = text || '';
   let paymentMethod = null;
 
@@ -259,7 +214,6 @@ async function handleWaitingPayment(senderId, text, postbackPayload) {
   const quantity = state.quantity;
   const subtotal = state.itemPrice * quantity;
 
-  // Build the order object to send to the backend
   const orderData = {
     restaurant_id: process.env.RESTAURANT_ID,
     messenger_id: senderId,
@@ -280,10 +234,8 @@ async function handleWaitingPayment(senderId, text, postbackPayload) {
     ordered_at: new Date().toISOString(),
   };
 
-  // Submit order (mock for now — see api.js)
   await sendOrderToAPI(orderData);
 
-  // Clear session before sending the final message
   clearState(senderId);
 
   await sendTextMessage(

@@ -1,6 +1,6 @@
-# routers/orders.py — Order endpoints
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from sqlalchemy.orm import selectinload
 from datetime import datetime
 from database import get_db
 from firebase import verify_firebase_token
@@ -20,7 +20,6 @@ def create_order(body: OrderIn, db: Session = Depends(get_db)):
     """
     rid = body.restaurant_id
 
-    # Upsert customer — scope lookup by restaurant if restaurant_id provided
     query = db.query(Customer).filter_by(messenger_id=body.messenger_id)
     if rid:
         query = query.filter_by(restaurant_id=rid)
@@ -41,7 +40,6 @@ def create_order(body: OrderIn, db: Session = Depends(get_db)):
         customer.phone   = body.phone
         customer.address = body.address
 
-    # Create order
     order = Order(
         restaurant_id  = rid,
         customer_id    = customer.id,
@@ -73,7 +71,14 @@ def list_orders(
     user=Depends(verify_firebase_token),
 ):
     """Dashboard: list orders for the authenticated restaurant."""
-    query = db.query(Order).join(Customer).filter(Order.restaurant_id == user["uid"])
+    query = (
+        db.query(Order)
+        .options(
+            selectinload(Order.customer),
+            selectinload(Order.items),
+        )
+        .filter(Order.restaurant_id == user["uid"])
+    )
     if status:
         query = query.filter(Order.status == status)
     orders = query.order_by(Order.ordered_at.desc()).all()

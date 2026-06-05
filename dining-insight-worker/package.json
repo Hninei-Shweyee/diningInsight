@@ -1,0 +1,16 @@
+{
+  "name": "dining-insight-worker",
+  "version": "1.0.0",
+  "description": "Dining Insight - Cloudflare Worker with Neon PostgreSQL",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^1.0.0"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "young-bread-295b",
+  "main": "src/young-bread-worker.js",
+  "compatibility_date": "2026-05-31",
+  "vars": {
+    "DATABASE_WORKER_URL": "https://dining-insight-worker.hnineishweyee311020.workers.dev"
+  }
+}

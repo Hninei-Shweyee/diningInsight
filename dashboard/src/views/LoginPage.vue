@@ -1,20 +1,20 @@
 <template>
   <div class="min-h-screen flex">
-    <!-- Left panel — brand -->
+    
     <div class="hidden lg:flex lg:w-1/2 flex-col p-10 text-white relative overflow-hidden"
          style="background: linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.65)), url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1000&q=80') center/cover no-repeat">
 
-      <!-- Logo -->
       <div class="flex items-center gap-3 mb-6 z-10">
-        <div class="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center text-xl">🍽️</div>
+        <div class="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center overflow-hidden">
+          <img :src="logo" alt="DiningInsight" class="h-full w-full object-cover" />
+        </div>
         <span class="text-lg font-bold">DiningInsight</span>
       </div>
 
-      <!-- Headline + cards — all centered together -->
       <div class="flex-1 z-10 flex items-center justify-center">
         <div class="flex flex-col items-center gap-6 w-96">
 
-          <!-- Headline -->
+          
           <div class="text-center">
             <h2 class="text-4xl font-bold leading-tight mb-2">Start Managing Your<br/>Restaurant Smarter</h2>
             <p class="text-white/70 text-sm">Manage orders, customers, promotions, and business insights in one platform.</p>
@@ -22,7 +22,7 @@
 
           <div class="relative w-96" style="height:300px">
 
-            <!-- Total Orders card — top left -->
+            
             <div class="absolute rounded-2xl px-4 py-3 shadow-lg w-44" style="top:0;left:0;background:rgba(255,255,255,0.12);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.2)">
               <div class="flex items-center gap-2 mb-1">
                 <div class="w-7 h-7 rounded-lg flex items-center justify-center text-sm" style="background:rgba(255,255,255,0.2)">🍽️</div>
@@ -32,7 +32,7 @@
               <p class="text-xs text-green-400 mt-0.5">↑ 12.9% vs last week</p>
             </div>
 
-            <!-- Revenue card — top right -->
+            
             <div class="absolute rounded-2xl px-4 py-3 shadow-lg w-44" style="top:0;right:0;background:rgba(255,255,255,0.12);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.2)">
               <div class="flex items-center gap-2 mb-1">
                 <div class="w-7 h-7 rounded-lg flex items-center justify-center text-sm" style="background:rgba(255,255,255,0.2)">💰</div>
@@ -42,7 +42,7 @@
               <p class="text-xs text-green-400 mt-0.5">↑ 8.3% vs last week</p>
             </div>
 
-            <!-- Weekly Sales chart card — middle left -->
+            
             <div class="absolute rounded-2xl p-3 shadow-lg w-52" style="top:105px;left:0;background:rgba(255,255,255,0.12);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.2)">
               <p class="text-xs font-semibold text-white/90 mb-1.5">Weekly Sales Overview</p>
               <svg viewBox="0 0 160 40" class="w-full" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -54,7 +54,7 @@
               </div>
             </div>
 
-            <!-- New Order notification — middle right -->
+            
             <div class="absolute rounded-2xl px-3 py-2.5 shadow-lg w-40" style="top:115px;right:0;background:rgba(255,255,255,0.12);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.2)">
               <div class="flex items-start gap-2">
                 <div class="w-7 h-7 rounded-lg flex items-center justify-center text-sm flex-shrink-0" style="background:rgba(255,255,255,0.2)">🔔</div>
@@ -66,13 +66,13 @@
               </div>
             </div>
 
-            <!-- Curved arrow -->
+            
             <svg class="absolute" style="top:195px;right:155px;width:45px;height:45px" viewBox="0 0 50 50" fill="none">
               <path d="M10 5 Q40 5 40 35 Q40 45 30 45" stroke="white" stroke-width="1.5" stroke-dasharray="3 3" fill="none" stroke-linecap="round"/>
               <polyline points="25,40 30,45 35,40" stroke="white" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
 
-            <!-- Bottom cards row -->
+            
             <div class="absolute left-0 right-0 flex gap-3" style="bottom:0">
               <div class="flex-1 rounded-2xl px-3 py-2.5 shadow-lg flex items-center gap-2" style="background:rgba(255,255,255,0.12);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.2)">
                 <div class="w-8 h-8 rounded-xl flex items-center justify-center text-base flex-shrink-0" style="background:rgba(255,255,255,0.2)">💬</div>
@@ -95,13 +95,15 @@
       </div>
     </div>
 
-    <!-- Right panel — form -->
+    
     <div class="flex-1 flex items-center justify-center p-8 bg-gray-50">
       <div class="w-full max-w-sm">
-        <!-- Mobile logo -->
+        
         <div class="lg:hidden text-center mb-8">
           <div class="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-3 text-3xl"
-               style="background:#f97316">🍽️</div>
+               style="background:#f97316">
+            <img :src="logo" alt="DiningInsight" class="h-full w-full rounded-2xl object-cover" />
+          </div>
           <h2 class="text-2xl font-bold text-gray-800">DiningInsight</h2>
         </div>
 
@@ -158,6 +160,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import logo from '../assets/di-logo.jpg'
 
 const router   = useRouter()
 const auth     = useAuthStore()

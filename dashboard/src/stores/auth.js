@@ -1,11 +1,11 @@
-// stores/auth.js — Firebase authentication state
+
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
 export const useAuthStore = defineStore('auth', () => {
-  const user  = ref(null)   // Firebase user object
+  const user  = ref(null)
   const token = ref(localStorage.getItem('fb_token') || null)
-  const ready = ref(false)  // true once Firebase has resolved initial auth state
+  const ready = ref(false)
 
   function setUser(firebaseUser, idToken) {
     user.value  = firebaseUser

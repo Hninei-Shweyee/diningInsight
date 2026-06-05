@@ -7,7 +7,6 @@
     <div v-if="loading" class="text-center py-16 text-gray-400">Loading insights…</div>
 
     <div v-else>
-      <!-- Summary cards -->
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <div class="bg-white rounded-xl p-5 shadow-sm">
           <p class="text-xs text-gray-500 mb-1">Total Orders</p>
@@ -29,7 +28,6 @@
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        <!-- Pie chart: most ordered items -->
         <div class="bg-white rounded-xl p-6 shadow-sm">
           <h3 class="font-semibold text-gray-700 mb-4">Most Ordered Menu Items</h3>
           <div v-if="chartData" class="flex justify-center">
@@ -40,7 +38,6 @@
           <p v-else class="text-center text-gray-400 text-sm py-8">No order data yet.</p>
         </div>
 
-        <!-- Top items this month -->
         <div class="bg-white rounded-xl p-6 shadow-sm">
           <h3 class="font-semibold text-gray-700 mb-4">Top Items This Month</h3>
           <div class="space-y-3">
@@ -71,7 +68,6 @@
           </div>
         </div>
 
-        <!-- All-time ranking -->
         <div class="bg-white rounded-xl p-6 shadow-sm lg:col-span-2">
           <h3 class="font-semibold text-gray-700 mb-4">All-Time Most Ordered</h3>
           <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
@@ -116,7 +112,6 @@ onMounted(async () => {
   loading.value = false
 })
 
-// 13 fully distinct colors — one per menu item, no duplicates
 const COLORS = [
   '#FF6384', // pink-red
   '#36A2EB', // blue
@@ -160,7 +155,6 @@ const chartOptions = computed(() => {
       datalabels: {
         color: '#fff',
         font: { weight: 'bold', size: 14 },
-        // Show "FoodName\n12%" on each slice
         formatter: (value) => {
           const pct = total > 0 ? ((value / total) * 100).toFixed(1) : 0
           return pct >= 5 ? `${pct}%` : ''

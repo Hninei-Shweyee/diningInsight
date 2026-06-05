@@ -1,9 +1,6 @@
-// menu.js — Static menu data for DiningInsight restaurant
-// Edit this file to add/remove/change menu items and categories
 
 const CATEGORIES = ['Burger', 'Fried Chicken', 'Drinks', 'Combo'];
 
-// Full menu data: each category maps to an array of { name, price } objects
 const MENU = {
   'Burger': [
     { name: 'Classic Burger', price: 89 },
@@ -28,12 +25,6 @@ const MENU = {
   ],
 };
 
-/**
- * Returns the list of items for a given category.
- * Returns an empty array if the category does not exist.
- * @param {string} category - e.g. 'Burger'
- * @returns {{ name: string, price: number }[]}
- */
 function getItemsByCategory(category) {
   return MENU[category] || [];
 }

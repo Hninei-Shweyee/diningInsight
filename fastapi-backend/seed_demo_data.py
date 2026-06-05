@@ -17,14 +17,12 @@ import random
 
 db = SessionLocal()
 
-# ── Clear existing demo data (keeps real orders) ──────────────────────────────
 print("Clearing old demo data...")
 db.query(OrderItem).delete()
 db.query(Order).delete()
 db.query(Customer).delete()
 db.commit()
 
-# ── Fake customers ────────────────────────────────────────────────────────────
 customers_data = [
     ("fake_001", "Jessica Miller",   "0812345678", "Chiang Mai, Nimman"),
     ("fake_002", "Floyd Miles",      "0823456789", "Chiang Mai, Old City"),
@@ -43,7 +41,6 @@ customers_data = [
     ("fake_015", "Cody Fisher",      "0856677889", "Chiang Mai, Mueang"),
 ]
 
-# ── Menu items to order from ───────────────────────────────────────────────────
 menu = [
     ("Classic Burger",      "Burger",        89),
     ("Double Burger",       "Burger",       129),
@@ -66,7 +63,6 @@ now = datetime.now(timezone.utc)
 
 print("Seeding customers and orders...")
 for i, (messenger_id, name, phone, address) in enumerate(customers_data):
-    # Create customer
     customer = Customer(
         messenger_id=messenger_id,
         name=name,
@@ -77,7 +73,6 @@ for i, (messenger_id, name, phone, address) in enumerate(customers_data):
     db.add(customer)
     db.flush()
 
-    # Each customer places 1–5 orders spread over the past 3 months
     num_orders = random.randint(1, 5)
     for j in range(num_orders):
         days_ago   = random.randint(0, 90)
@@ -88,7 +83,6 @@ for i, (messenger_id, name, phone, address) in enumerate(customers_data):
         qty          = random.randint(1, 3)
         subtotal     = item[2] * qty
         payment      = random.choice(payments)
-        # Most orders are delivered, a few are at other stages
         status = random.choices(
             ["delivered", "delivered", "delivered", "ready", "cooking", "pending"],
             weights=[50, 50, 50, 15, 10, 5]
@@ -117,3 +111,4 @@ db.close()
 
 print("✅ Done! Demo data seeded successfully.")
 print("   Open http://localhost:5173 to see the dashboard with full data.")
+

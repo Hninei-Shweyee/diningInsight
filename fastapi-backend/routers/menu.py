@@ -1,4 +1,3 @@
-# routers/menu.py — Menu management endpoints
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from database import get_db

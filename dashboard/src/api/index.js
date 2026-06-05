@@ -1,11 +1,10 @@
-// api/index.js — Axios client for FastAPI backend
 import axios from 'axios'
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000',
+  timeout: 15000,
 })
 
-// Attach a fresh Firebase token to every request
 api.interceptors.request.use(async (config) => {
   try {
     const { getAuth } = await import('firebase/auth')
@@ -22,7 +21,7 @@ api.interceptors.request.use(async (config) => {
   return config
 })
 
-// On 401, refresh the Firebase token and retry the request once
+
 api.interceptors.response.use(
   res => res,
   async (error) => {
@@ -44,22 +43,21 @@ api.interceptors.response.use(
   }
 )
 
-// ── Orders ──────────────────────────────────────────────
+
 export const getOrders     = (status)        => api.get('/orders', { params: status ? { status } : {} })
 export const updateStatus  = (id, status)    => api.patch(`/orders/${id}/status`, { status })
 
-// ── Customers ───────────────────────────────────────────
-export const getCustomers  = (params = {})   => api.get('/customers', { params })
-export const getCustomer   = (id)            => api.get(`/customers/${id}`)
 
-// ── Menu ────────────────────────────────────────────────
+export const getCustomers  = (params = {})   => api.get('/customers', { params })
+export const getCustomer   = (id, params = {}) => api.get(`/customers/${id}`, { params })
+
+
 export const getMenu       = ()              => api.get('/menu')
 export const createMenuItem = (data)         => api.post('/menu', data)
 export const updateMenuItem = (id, data)     => api.put(`/menu/${id}`, data)
 export const deleteMenuItem = (id)           => api.delete(`/menu/${id}`)
 
-// ── Insights ────────────────────────────────────────────
+
 export const getInsights   = ()              => api.get('/insights/summary')
 
-// ── Auth ────────────────────────────────────────────────
 export const getMe         = ()              => api.get('/auth/me')
