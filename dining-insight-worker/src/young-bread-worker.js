@@ -24,6 +24,13 @@ function titleCase(text = '') {
     .join(' ');
 }
 
+function splitMessageParts(text = '') {
+  return text
+    .split(/[\n,;]+/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+}
+
 function emptyOrder() {
   return {
     name: null,
@@ -107,7 +114,7 @@ function formatMenu(rows) {
     grouped[category].push(row);
   }
 
-  let text = '🍽️ DINING INSIGHT - OUR MENU\n\n';
+  let text = '🍽️ OUR MENU\n\n';
   for (const [category, items] of Object.entries(grouped)) {
     text += `${category.toUpperCase()}\n`;
     items.forEach((item, index) => {
@@ -117,7 +124,7 @@ function formatMenu(rows) {
     text += '\n';
   }
 
-  text += 'You can send your order in one message, like: "2 Cheese Burger, cash, Hnin, 064797654, Bangkok".';
+  text += 'You can send your order in one message, like: "2 Cheese Burger, cash, Hnin, 0812345678, Bangkok".';
   return text;
 }
 
@@ -128,6 +135,53 @@ function isMenuRequest(text = '') {
     lower.includes('what do you have') ||
     lower.includes('စားစရာ') ||
     lower.includes('ဘာရှိ');
+}
+
+function isUnmatchedFoodRequest(text, menuRows) {
+  const lower = normalize(text);
+  const foodPatterns = [
+    /\bi\s+want\s+/,
+    /\bi\s+would\s+like\s+/,
+    /\bi'd\s+like\s+/,
+    /\bgive\s+me\s+/,
+    /\bi\s+need\s+/,
+    /\bi'll\s+have\s+/,
+    /\bget\s+me\s+/,
+    /\bcan\s+i\s+(get|have|order)\s+/,
+    /\bdo\s+you\s+have\s+/,
+    /\bhow\s+about\s+/,
+  ];
+
+  const hasFoodIntent = foodPatterns.some(p => p.test(lower));
+  if (!hasFoodIntent) return false;
+
+  const found = findMenuItems(text, menuRows);
+  return found.length === 0;
+}
+
+function isPriceInquiry(text = '') {
+  const lower = normalize(text);
+  const hasPriceWord = /\b(how\s+much|price|cost|what\s+is\s+the\s+price)\b/i.test(lower);
+  const hasItemName = lower.replace(
+    /\b(how\s+much|what(\s+is)?|the\s+price\s+of|price\s+of|cost\s+of|is|are|a|an|one|for|please|tell\s+me|can\s+you|does|do|i\s+want\s+to\s+know|whats|what's)\b/gi, ''
+  ).trim().length > 1;
+
+  return hasPriceWord && hasItemName && !/\b\d{1,2}\s*(x|pcs|pieces?)\b/i.test(lower);
+}
+
+function priceInquiryResponse(text, menuRows) {
+  const lower = normalize(text);
+  const sorted = [...menuRows].sort((a, b) => b.name.length - a.name.length);
+
+  for (const row of sorted) {
+    if (lower.includes(normalize(row.name))) {
+      const special = row.is_special ? ' 🔥 SPECIAL' : '';
+      const price = parseFloat(row.price).toLocaleString();
+      return `${row.name}${special} is ${price} THB. Would you like to order it?`;
+    }
+  }
+
+  return `I couldn't find that item on our menu. You can view our full menu by typing "menu".`;
 }
 
 function isReset(text = '') {
@@ -158,9 +212,31 @@ function hasCorrectionIntent(text = '') {
     lower.includes('update') ||
     lower.includes('correct ') ||
     lower.includes('correction') ||
+    lower.includes('remove') ||
+    lower.includes('delete') ||
+    lower.includes('no ') ||
+    lower.includes("don't want") ||
+    lower.includes('do not want') ||
     lower.includes('sorry') ||
     lower.includes('sry') ||
     lower.includes('instead');
+}
+
+function hasRemoveItemIntent(text = '') {
+  const lower = normalize(text);
+  return /\b(remove|delete)\b/.test(lower) ||
+    /\b(no|without)\b/.test(lower) ||
+    /\b(don't want|do not want|dont want|not want)\b/.test(lower);
+}
+
+function correctionField(text = '') {
+  const lower = normalize(text);
+  if (/\b(name|customer name)\b/.test(lower)) return 'name';
+  if (/\b(phone|mobile|tel|telephone|number)\b/.test(lower)) return 'phone';
+  if (/\b(address|delivery|deliver to|location)\b/.test(lower)) return 'address';
+  if (/\b(payment|pay|cash|bank|transfer|card)\b/.test(lower)) return 'payment';
+  if (/\b(item|food|order)\b/.test(lower)) return 'items';
+  return null;
 }
 
 function extractPayment(text = '') {
@@ -173,7 +249,7 @@ function extractPayment(text = '') {
 }
 
 function extractPhone(text = '') {
-  const match = text.match(/(?:phone(?:\s*number)?\s*[-:]?\s*)?(\+?\d[\d\s-]{5,16}\d)/i);
+  const match = text.match(/(?:phone|mobile|tel|telephone|number)?(?:\s*number)?\s*[-:]?\s*(\+?\d[\d\s-]{6,18}\d)/i);
   if (!match) return null;
   const phone = match[1].replace(/[^\d+]/g, '');
   return isValidPhone(phone) ? phone : null;
@@ -182,6 +258,7 @@ function extractPhone(text = '') {
 function cleanAddress(text = '') {
   return titleCase(text
     .replace(/^(wrong\s*)?(address|delivery address|deliver to|delivery)\s*[:\-]?\s*/i, '')
+    .replace(/^(change|update|correct|replace)\s+(my\s+)?(address|delivery address|delivery|location)\s*(to|is)?\s*[:\-]?\s*/i, '')
     .replace(/\b(this is|that is|is)\s+(the\s+)?correct\s+address\b/ig, '')
     .replace(/\b(correct|please|pls|sry|sorry|wrong address|wrong)\b/ig, '')
     .replace(/\s+/g, ' ')
@@ -190,7 +267,7 @@ function cleanAddress(text = '') {
 }
 
 function hasInvalidPhoneCandidate(text = '') {
-  const candidates = text.match(/\+?\d[\d\s-]{4,16}\d/g) || [];
+  const candidates = text.match(/\+?\d[\d\s-]{4,18}\d/g) || [];
   return candidates.some((candidate) => {
     const digits = candidate.replace(/[^\d+]/g, '');
     return digits.replace(/[^\d]/g, '').length >= 5 && !isValidPhone(digits);
@@ -198,7 +275,8 @@ function hasInvalidPhoneCandidate(text = '') {
 }
 
 function isValidPhone(phone = '') {
-  return /^\+?\d{8,15}$/.test(phone);
+  const compact = phone.replace(/[^\d+]/g, '');
+  return /^0[689]\d{8}$/.test(compact) || /^\+66[689]\d{8}$/.test(compact) || /^66[689]\d{8}$/.test(compact);
 }
 
 function extractQuantity(text = '') {
@@ -261,13 +339,22 @@ function findMenuItems(text, menuRows) {
   const found = [];
   const sorted = [...menuRows].sort((a, b) => b.name.length - a.name.length);
   const lines = text.split(/\n+/).map((line) => line.trim()).filter(Boolean);
+  const lowerText = normalize(text);
+  const occupied = [];
+
+  const overlapsExistingMatch = (start, end) => occupied.some((span) => start < span.end && end > span.start);
 
   for (const row of sorted) {
     const name = row.name;
+    const normalizedName = normalize(name);
+    const start = lowerText.indexOf(normalizedName);
+    if (start === -1) continue;
+
+    const end = start + normalizedName.length;
+    if (overlapsExistingMatch(start, end)) continue;
+
     const line = lines.find((entry) => normalize(entry).includes(normalize(name)));
     const source = line || text;
-
-    if (!normalize(text).includes(normalize(name))) continue;
 
     found.push({
       menu_item_id: row.id,
@@ -276,36 +363,85 @@ function findMenuItems(text, menuRows) {
       is_special: Boolean(row.is_special),
       quantity: quantityNearItem(source, name, extractQuantity(source)) || 1,
     });
+    occupied.push({ start, end });
   }
 
   return found;
+}
+
+function isLikelyGibberish(text = '', menuRows = []) {
+  const lower = normalize(text);
+  if (!lower) return true;
+  if (
+    isMenuRequest(text) ||
+    hasCorrectionIntent(text) ||
+    extractPayment(text) ||
+    extractPhone(text) ||
+    hasInvalidPhoneCandidate(text) ||
+    findMenuItems(text, menuRows).length
+  ) {
+    return false;
+  }
+
+  const letters = lower.replace(/[^a-z]/g, '');
+  const words = lower.split(/\s+/).filter(Boolean);
+  if (!letters) return false;
+  if (words.length === 1 && letters.length >= 6 && !/[aeiou]/.test(letters)) return true;
+  if (words.length <= 2 && letters.length >= 8 && (letters.match(/[aeiou]/g) || []).length <= 1) return true;
+  if (/^[a-z]{5,}$/.test(letters) && /(.)\1{3,}/.test(letters)) return true;
+  return false;
 }
 
 function looksLikeAddress(line = '') {
   const lower = normalize(line);
   return lower.includes('street') ||
     lower.includes('road') ||
+    lower.includes('soi') ||
+    lower.includes('moo') ||
+    lower.includes('tambon') ||
+    lower.includes('district') ||
+    lower.includes('province') ||
     lower.includes('bangkok') ||
     lower.includes('thailand') ||
     lower.includes('chiang') ||
     lower.includes('apartment') ||
     lower.includes('building') ||
     lower.includes('room') ||
+    lower.includes('condo') ||
+    lower.includes('village') ||
     lower.includes('floor') ||
     lower.includes('landmark') ||
-    lower.split(' ').length >= 2;
+    /\d/.test(line);
+}
+
+function looksLikeOrderOrMenuText(text = '') {
+  const lower = normalize(text);
+  return /\b(i\s+want|i\s+need|i\s+would\s+like|i'd\s+like|i\s+will\s+have|i'll\s+have|can\s+i\s+(get|have|order)|give\s+me|get\s+me|order|menu|food|drink|drint|eat|burger|chicken|cola|juice|tea|water)\b/.test(lower) ||
+    /\b(let\s+me\s+see|show\s+me|what\s+do\s+you\s+have)\b/.test(lower);
 }
 
 function cleanName(line = '') {
-  return line.replace(/^(name|my name is|i am|i'm|customer name)\s*[:\-]?\s*/i, '').trim();
+  return line
+    .replace(/^(wrong\s*)?(name|my name is|i am|i'm|customer name)\s*[:\-]?\s*/i, '')
+    .replace(/^i\s+name\s+is\s+/i, '')
+    .replace(/^(change|update|correct|replace)\s+(my\s+)?(name|customer name)\s*(to|is)?\s*[:\-]?\s*/i, '')
+    .replace(/^(correct\s+)?name\s+is\s+/i, '')
+    .replace(/\b(this is|that is|is)\s+(the\s+)?correct\s+name\b/ig, '')
+    .replace(/\b(correct|please|pls|sry|sorry|wrong name|wrong)\b/ig, '')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 function extractAddressLine(text = '', menuRows = []) {
-  const lines = text.split(/\n+/).map((line) => line.trim()).filter(Boolean);
+  const lines = splitMessageParts(text);
   const addressKeyword = lines.find((line) => /address|delivery|deliver to/i.test(line));
   if (addressKeyword) {
-    return cleanAddress(addressKeyword);
+    const cleaned = cleanAddress(addressKeyword);
+    return cleaned || null;
   }
+
+  const field = hasCorrectionIntent(text) ? correctionField(text) : null;
+  if (field && field !== 'address') return null;
 
   for (const line of lines) {
     const lower = normalize(line);
@@ -317,6 +453,7 @@ function extractAddressLine(text = '', menuRows = []) {
       /^\d{1,2}$/.test(line) ||
       lower.includes('order') ||
       lower.includes('wrong') ||
+      lower.includes('name') ||
       lower.includes('please')
     ) {
       continue;
@@ -329,9 +466,15 @@ function extractAddressLine(text = '', menuRows = []) {
 }
 
 function extractNameLine(text = '', menuRows = []) {
-  const lines = text.split(/\n+/).map((line) => line.trim()).filter(Boolean);
-  const nameKeyword = lines.find((line) => /^(name|my name is|i am|i'm|customer name)\b/i.test(line));
-  if (nameKeyword) return titleCase(cleanName(nameKeyword));
+  const lines = splitMessageParts(text);
+  const nameKeyword = lines.find((line) => /\b(name|my name is|i am|i'm|customer name)\b/i.test(line));
+  if (nameKeyword) {
+    const cleaned = cleanName(nameKeyword);
+    return isValidName(cleaned) ? titleCase(cleaned) : null;
+  }
+
+  const field = hasCorrectionIntent(text) ? correctionField(text) : null;
+  if (field && field !== 'name') return null;
 
   for (const line of lines) {
     const lower = normalize(line);
@@ -344,6 +487,7 @@ function extractNameLine(text = '', menuRows = []) {
       findMenuItem(line, menuRows) ||
       /^\d{1,2}$/.test(line) ||
       looksLikeAddress(line) ||
+      looksLikeOrderOrMenuText(line) ||
       lower.includes('order') ||
       lower.includes('wrong') ||
       lower.includes('please')
@@ -351,10 +495,19 @@ function extractNameLine(text = '', menuRows = []) {
       continue;
     }
 
-    if (/^[a-z .'-]{2,40}$/i.test(cleanedName)) return titleCase(cleanedName);
+    if (isValidName(cleanedName)) return titleCase(cleanedName);
   }
 
   return null;
+}
+
+function isValidName(name = '') {
+  const cleaned = name.trim();
+  if (!/^[a-z .'-]{2,40}$/i.test(cleaned)) return false;
+  const letters = cleaned.replace(/[^a-z]/gi, '');
+  if (letters.length < 2) return false;
+  if (letters.length >= 6 && !/[aeiou]/i.test(letters)) return false;
+  return true;
 }
 
 function applyMessageToOrder(order, text, menuRows) {
@@ -364,13 +517,17 @@ function applyMessageToOrder(order, text, menuRows) {
   const payment = extractPayment(text);
   const phone = extractPhone(text);
   const isCorrection = hasCorrectionIntent(text);
+  const field = isCorrection ? correctionField(text) : null;
 
   if (payment) updated.payment_method = payment;
-  if (phone) updated.phone = phone;
-  if (!phone && isCorrection && hasInvalidPhoneCandidate(text)) updated.phone = null;
+  if (phone && (!field || field === 'phone')) updated.phone = phone;
+  if (!phone && isCorrection && (field === 'phone' || hasInvalidPhoneCandidate(text))) updated.phone = null;
 
   if (items.length) {
-    if (isCorrection) {
+    if (hasRemoveItemIntent(text)) {
+      const removeNames = new Set(items.map((item) => item.name.toLowerCase()));
+      updated.items = updated.items.filter((item) => !removeNames.has(item.name.toLowerCase()));
+    } else if (isCorrection) {
       const replaceAll = /\b(new order|replace order|wrong order|change order)\b/i.test(text);
       if (replaceAll || !updated.items.length) {
         updated.items = items;
@@ -401,8 +558,8 @@ function applyMessageToOrder(order, text, menuRows) {
   const name = extractNameLine(text, menuRows);
   const address = extractAddressLine(text, menuRows);
 
-  if (name && (!updated.name || isCorrection || /\b(name|my name|customer name)\b/i.test(text))) updated.name = name;
-  if (address && (!updated.address || isCorrection || /\b(address|delivery|deliver to)\b/i.test(text))) updated.address = address;
+  if (name && (!updated.name || field === 'name' || (!field && isCorrection) || /\b(name|my name|customer name)\b/i.test(text))) updated.name = name;
+  if (address && (!updated.address || field === 'address' || (!field && isCorrection) || /\b(address|delivery|deliver to)\b/i.test(text))) updated.address = address;
 
   return updated;
 }
@@ -432,7 +589,7 @@ function nextQuestion(order) {
 
   const labels = {
     name: 'your name',
-    'phone number': 'a valid phone number',
+    'phone number': 'phone number',
     'delivery address': 'your delivery address',
     'payment method': 'payment method, Cash / Bank Transfer / Card',
   };
@@ -629,13 +786,29 @@ async function buildReply(sql, env, senderId, text) {
     return menuText;
   }
 
+  if (isPriceInquiry(text)) {
+    await saveSession(sql, senderId, session);
+    return priceInquiryResponse(text, menuRows);
+  }
+
+  if (isLikelyGibberish(text, menuRows)) {
+    await saveSession(sql, senderId, session);
+    return 'Sorry, I could not understand that. Please send a real order or customer detail, or type "menu".';
+  }
+
   const order = applyMessageToOrder(session.data.order, text, menuRows);
+
+  if (isUnmatchedFoodRequest(text, menuRows)) {
+    session.data.order = order;
+    await saveSession(sql, senderId, session);
+    return `Sorry, I couldn't find that on our menu. Type "menu" to browse what we have, or pick from our available items!`;
+  }
 
   if (hasInvalidPhoneCandidate(text) && !extractPhone(text)) {
     session.state = 'collecting';
     session.data.order = order;
     await saveSession(sql, senderId, session);
-    return 'That phone number looks a bit too short or invalid. Could you send a valid phone number? For example: 064797654 or +959123456789.';
+    return 'That phone number looks invalid. Please send a correct phone number.';
   }
 
   if (session.state === 'awaiting_confirmation' && isAffirmation(text)) {

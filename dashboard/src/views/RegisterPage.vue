@@ -15,7 +15,7 @@
 
           <div class="text-center">
             <h2 class="text-4xl font-bold leading-tight mb-2">Start Managing Your<br/>Restaurant Smarter</h2>
-            <p class="text-white/70 text-sm">Manage orders, customers, promotions, and business insights in one platform.</p>
+            <p class="text-white/70 text-sm">Manage orders, customers, menus, and Messenger ordering in one platform.</p>
           </div>
 
           <div class="relative w-96" style="height:300px">

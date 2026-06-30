@@ -12,7 +12,7 @@ const routes = [
   { path: '/dashboard',      name: 'Dashboard',     component: () => import('../views/InsightsPage.vue'),      meta: { requiresAuth: true } },
   
   { path: '/auto-messaging', name: 'AutoMessaging', component: () => import('../views/AutoMessagingPage.vue'), meta: { requiresAuth: true } },
-  { path: '/:pathMatch(.*)*', redirect: '/dashboard' },
+  { path: '/:pathMatch(.*)*', redirect: '/orders' },
 ]
 
 const router = createRouter({
@@ -24,7 +24,7 @@ const router = createRouter({
 router.beforeEach((to) => {
   const auth = useAuthStore()
   if (to.meta.requiresAuth && !auth.token) return '/login'
-  if (to.path === '/login'  &&  auth.token) return '/dashboard'
+  if (to.path === '/login'  &&  auth.token) return '/orders'
 })
 
 export default router

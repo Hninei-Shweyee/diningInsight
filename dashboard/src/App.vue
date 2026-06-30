@@ -146,7 +146,6 @@ const isAuthPage = computed(() =>
 )
 
 const navLinks = [
-  { to: '/dashboard', label: 'Dashboard' },
   { to: '/orders',    label: 'Orders'    },
   { to: '/customers', label: 'Customers' },
   { to: '/menu',      label: 'Menu'      },

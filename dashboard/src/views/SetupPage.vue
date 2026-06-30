@@ -61,7 +61,7 @@
           class="w-full text-white font-medium py-2.5 rounded-lg text-sm transition-opacity disabled:opacity-60 hover:opacity-90"
           style="background: #f97316"
         >
-          {{ loading ? 'Saving...' : 'Save & Go to Dashboard' }}
+          {{ loading ? 'Saving...' : 'Save & Go to Orders' }}
         </button>
       </form>
 
