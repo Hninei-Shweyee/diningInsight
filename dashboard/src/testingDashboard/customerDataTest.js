@@ -9,7 +9,6 @@ vi.mock('../api', () => ({
   getCustomer: (...args) => mockGetCustomer(...args),
 }))
 
-// the function we are testing (from CustomerPage.vue fetchCustomers())
 async function fetchCustomers({
   getCustomers,
   getCustomer,

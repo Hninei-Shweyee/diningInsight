@@ -14,7 +14,6 @@ vi.mock('firebase/app', () => ({
   getApps: vi.fn(() => [{ name: 'already-init' }]),
 }))
 
-// the function we are testing (from RegisterPage.vue handleRegister() fun:)
 async function handleRegister({ email, password, confirm, auth, router }) {
   let error = null
   let loading = false

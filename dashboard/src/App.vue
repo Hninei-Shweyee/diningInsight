@@ -5,7 +5,7 @@
   </div>
 
   
-  <div v-else class="flex min-h-screen bg-gray-100">
+  <div v-else class="flex h-screen overflow-hidden bg-gray-100">
 
     
     <div
@@ -16,7 +16,7 @@
 
     
     <aside
-      class="fixed lg:static inset-y-0 left-0 z-30 w-64 lg:w-56 flex flex-col flex-shrink-0 transition-transform duration-300 ease-in-out"
+      class="fixed inset-y-0 left-0 z-30 w-64 lg:static lg:h-screen lg:w-56 flex flex-col flex-shrink-0 transition-transform duration-300 ease-in-out"
       :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'"
       style="background: #111827;"
     >
@@ -38,7 +38,7 @@
       </div>
 
       
-      <nav class="flex-1 px-3 py-4 space-y-1">
+      <nav class="flex-1 min-h-0 overflow-y-auto px-3 py-4 space-y-1">
         <RouterLink
           v-for="link in navLinks"
           :key="link.to"
@@ -79,15 +79,15 @@
         </div>
         <button
           @click="handleLogout"
-          class="w-full text-xs text-white/50 hover:text-white bg-white/5 hover:bg-white/10 rounded-lg px-3 py-2 text-left transition-colors"
+          class="w-full rounded-md bg-neutral-600 px-3 py-3 text-center text-sm font-extrabold uppercase tracking-wide text-white hover:bg-neutral-500 transition-colors"
         >
-          Sign out →
+          Sign out
         </button>
       </div>
     </aside>
 
     
-    <div class="flex-1 flex flex-col min-w-0">
+    <div class="flex-1 flex flex-col min-w-0 min-h-0">
       
       <header class="lg:hidden bg-white border-b border-gray-200 px-4 py-3 flex items-center gap-3 sticky top-0 z-10 shadow-sm">
         <button
@@ -102,7 +102,7 @@
         </div>
       </header>
 
-      <main class="flex-1 overflow-auto">
+      <main class="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
         <RouterView />
       </main>
     </div>
@@ -146,6 +146,7 @@ const isAuthPage = computed(() =>
 )
 
 const navLinks = [
+  { to: '/dashboard', label: 'Dashboard' },
   { to: '/orders',    label: 'Orders'    },
   { to: '/customers', label: 'Customers' },
   { to: '/menu',      label: 'Menu'      },

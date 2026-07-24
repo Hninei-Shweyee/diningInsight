@@ -58,6 +58,6 @@ export const updateMenuItem = (id, data)     => api.put(`/menu/${id}`, data)
 export const deleteMenuItem = (id)           => api.delete(`/menu/${id}`)
 
 
-export const getInsights   = ()              => api.get('/insights/summary')
+export const getInsights   = (params = {})   => api.get('/insights/summary', { params })
 
 export const getMe         = ()              => api.get('/auth/me')

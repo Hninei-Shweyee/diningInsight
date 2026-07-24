@@ -431,6 +431,34 @@ function isMenuRequest(text = '') {
   )
 }
 
+function greetingInfo(text = '') {
+  const lower = normalize(text)
+    .replace(/[^\w\s']/g, '')
+    .replace(/\b(there|dear|sir|madam|everyone|all)\b/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+
+  const greetings = [
+    { pattern: /^(good\s+morning|morning)$/i, reply: 'Good morning' },
+    { pattern: /^(good\s+afternoon|afternoon)$/i, reply: 'Good afternoon' },
+    { pattern: /^(good\s+evening|evening)$/i, reply: 'Good evening' },
+    { pattern: /^(good\s+night|night)$/i, reply: 'Good night' },
+    { pattern: /^(hi|hello|hey|hiya|yo)$/i, reply: 'Hello' },
+    { pattern: /^(what'?s\s+up|whats\s+up|sup)$/i, reply: 'Hello' },
+  ]
+
+  return greetings.find((entry) => entry.pattern.test(lower)) || null
+}
+
+function isGreeting(text = '') {
+  return Boolean(greetingInfo(text))
+}
+
+function greetingResponse(text = '') {
+  const greeting = greetingInfo(text)?.reply || 'Hello'
+  return `${greeting}! Welcome to Dining Insight. How can I help you today?`
+}
+
 describe('isMenuRequest', () => {
   it('TC-45: should detect "menu" request', () => {
     expect(isMenuRequest('show me the menu')).toBe(true)
@@ -450,6 +478,26 @@ describe('isMenuRequest', () => {
 
   it('TC-49: should detect Burmese "စားစရာ"', () => {
     expect(isMenuRequest('စားစရာ')).toBe(true)
+  })
+})
+
+describe('greetings', () => {
+  it('TC-49b: should detect common greeting messages', () => {
+    expect(isGreeting('good morning')).toBe(true)
+    expect(isGreeting('Good afternoon!')).toBe(true)
+    expect(isGreeting('hello')).toBe(true)
+    expect(isGreeting("what's up")).toBe(true)
+  })
+
+  it('TC-49c: should return the requested welcome response', () => {
+    expect(greetingResponse('good morning')).toBe(
+      'Good morning! Welcome to Dining Insight. How can I help you today?'
+    )
+  })
+
+  it('TC-49d: should not treat order or customer detail text as greetings', () => {
+    expect(isGreeting('Spicy Chicken')).toBe(false)
+    expect(isGreeting('Hnin Aye')).toBe(false)
   })
 })
 
@@ -512,6 +560,7 @@ function looksLikeAddress(line = '') {
     lower.includes('bangkok') ||
     lower.includes('thailand') ||
     lower.includes('chiang') ||
+    /\bcnx\b/.test(lower) ||
     lower.includes('apartment') ||
     lower.includes('building') ||
     lower.includes('room') ||
@@ -535,12 +584,25 @@ describe('looksLikeAddress', () => {
   it('TC-55: should reject a name as not an address', () => {
     expect(looksLikeAddress('James Smith')).toBe(false)
   })
+
+  it('TC-55b: should match CNX as a Chiang Mai location abbreviation', () => {
+    expect(looksLikeAddress('San Sai CNX')).toBe(true)
+  })
 })
 
 function looksLikeOrderOrMenuText(text = '') {
   const lower = normalize(text)
   return /\b(i\s+want|i\s+need|i\s+would\s+like|i'd\s+like|i\s+will\s+have|i'll\s+have|can\s+i\s+(get|have|order)|give\s+me|get\s+me|order|menu|food|drink|drint|eat|burger|chicken|cola|juice|tea|water)\b/.test(lower) ||
     /\b(let\s+me\s+see|show\s+me|what\s+do\s+you\s+have)\b/.test(lower)
+}
+
+function looksLikePlainLocation(line = '') {
+  const lower = normalize(line)
+  const words = lower.split(/\s+/).filter(Boolean)
+  if (words.length < 2 || words.length > 8) return false
+  if (!/^[a-z0-9 .,'/-]+$/i.test(line.trim())) return false
+  if (looksLikeOrderOrMenuText(line)) return false
+  return true
 }
 
 // --- missingFields ---
@@ -1019,6 +1081,7 @@ function extractNameLine(text = '', menuRows = []) {
       hasInvalidPhoneCandidate(line) ||
       findMenuItem(line, menuRows) ||
       /^\d{1,2}$/.test(line) ||
+      isGreeting(line) ||
       looksLikeAddress(line) ||
       looksLikeOrderOrMenuText(line) ||
       lower.includes('order') ||
@@ -1078,6 +1141,12 @@ describe('extractNameLine', () => {
     const result = extractNameLine('I name is James', menuRows)
     expect(result).toBe('James')
   })
+
+  it('TC-82e: should not treat greetings as customer names', () => {
+    expect(extractNameLine('good morning', menuRows)).toBeNull()
+    expect(extractNameLine('hello', menuRows)).toBeNull()
+    expect(extractNameLine("what's up", menuRows)).toBeNull()
+  })
 })
 
 // --- applyMessageToOrder ---
@@ -1133,6 +1202,30 @@ function applyMessageToOrder(order, text, menuRows) {
 
   const name = extractNameLine(text, menuRows)
   const address = extractAddressLine(text, menuRows)
+  const onlyAddressMissing = Boolean(
+    updated.items.length &&
+    updated.name &&
+    updated.phone &&
+    isValidPhone(updated.phone) &&
+    updated.payment_method &&
+    !updated.address
+  )
+  const fallbackAddress = !address && onlyAddressMissing
+    ? splitMessageParts(text).find((line) => {
+      const lower = normalize(line)
+      return !extractPayment(line) &&
+        !extractPhone(line) &&
+        !hasInvalidPhoneCandidate(line) &&
+        !findMenuItem(line, menuRows) &&
+        !/^\d{1,2}$/.test(line) &&
+        !lower.includes('order') &&
+        !lower.includes('wrong') &&
+        !lower.includes('name') &&
+        !lower.includes('please') &&
+        looksLikePlainLocation(line)
+    })
+    : null
+  const resolvedAddress = address || (fallbackAddress ? cleanAddress(fallbackAddress) : null)
 
   if (
     name &&
@@ -1140,10 +1233,10 @@ function applyMessageToOrder(order, text, menuRows) {
   )
     updated.name = name
   if (
-    address &&
-    (!updated.address || field === 'address' || (!field && isCorrection) || /\b(address|delivery|deliver to)\b/i.test(text))
+    resolvedAddress &&
+    (!updated.address || field === 'address' || (!field && isCorrection) || /\b(address|delivery|deliver to)\b/i.test(text) || onlyAddressMissing)
   )
-    updated.address = address
+    updated.address = resolvedAddress
 
   return updated
 }
@@ -1260,6 +1353,50 @@ describe('applyMessageToOrder', () => {
     ])
     expect(result.name).toBeNull()
     expect(result.items).toEqual([])
+  })
+
+  it('TC-77e: should save a standalone location when only the address is missing', () => {
+    const order = {
+      ...emptyOrder(),
+      name: 'Ashley',
+      phone: '0854323456',
+      payment_method: 'Bank Transfer',
+      items: [{ name: 'Cheese Burger', price: 150, quantity: 2 }],
+    }
+    const result = applyMessageToOrder(order, 'San Sai', menuRows)
+    expect(result.address).toBe('San Sai')
+  })
+
+  it('TC-77f: should save CNX address from the Messenger flow', () => {
+    const order = {
+      ...emptyOrder(),
+      name: 'Ashley',
+      phone: '0854323456',
+      payment_method: 'Bank Transfer',
+      items: [{ name: 'Cheese Burger', price: 150, quantity: 2 }],
+    }
+    const result = applyMessageToOrder(order, 'Noung Hoi CNX', menuRows)
+    expect(result.address).toBe('Noung Hoi Cnx')
+  })
+
+  it('TC-77g: should keep name missing after a greeting, item, and contact details', () => {
+    let order = applyMessageToOrder(emptyOrder(), 'good morning', [
+      { id: 1, name: 'Spicy Chicken', price: 79, is_special: false },
+    ])
+    expect(order.name).toBeNull()
+
+    order = applyMessageToOrder(order, 'Spicy Chicken', [
+      { id: 1, name: 'Spicy Chicken', price: 79, is_special: false },
+    ])
+    order = applyMessageToOrder(order, '0634534562, Chiang Mai, cash', [
+      { id: 1, name: 'Spicy Chicken', price: 79, is_special: false },
+    ])
+
+    expect(order.name).toBeNull()
+    expect(order.phone).toBe('0634534562')
+    expect(order.address).toBe('Chiang Mai')
+    expect(order.payment_method).toBe('Cash')
+    expect(missingFields(order)).toEqual(['name'])
   })
 })
 

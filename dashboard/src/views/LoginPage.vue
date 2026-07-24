@@ -175,7 +175,6 @@ async function handleLogin() {
   try {
     const { getAuth, signInWithEmailAndPassword } = await import('firebase/auth')
     const { initializeApp, getApps, getApp }      = await import('firebase/app')
-
     const firebaseConfig = {
       apiKey:            import.meta.env.VITE_FIREBASE_API_KEY,
       authDomain:        import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,

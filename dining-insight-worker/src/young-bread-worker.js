@@ -137,6 +137,34 @@ function isMenuRequest(text = '') {
     lower.includes('ဘာရှိ');
 }
 
+function greetingInfo(text = '') {
+  const lower = normalize(text)
+    .replace(/[^\w\s']/g, '')
+    .replace(/\b(there|dear|sir|madam|everyone|all)\b/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  const greetings = [
+    { pattern: /^(good\s+morning|morning)$/i, reply: 'Good morning' },
+    { pattern: /^(good\s+afternoon|afternoon)$/i, reply: 'Good afternoon' },
+    { pattern: /^(good\s+evening|evening)$/i, reply: 'Good evening' },
+    { pattern: /^(good\s+night|night)$/i, reply: 'Good night' },
+    { pattern: /^(hi|hello|hey|hiya|yo)$/i, reply: 'Hello' },
+    { pattern: /^(what'?s\s+up|whats\s+up|sup)$/i, reply: 'Hello' },
+  ];
+
+  return greetings.find((entry) => entry.pattern.test(lower)) || null;
+}
+
+function isGreeting(text = '') {
+  return Boolean(greetingInfo(text));
+}
+
+function greetingResponse(text = '') {
+  const greeting = greetingInfo(text)?.reply || 'Hello';
+  return `${greeting}! Welcome to Dining Insight. How can I help you today?`;
+}
+
 function isUnmatchedFoodRequest(text, menuRows) {
   const lower = normalize(text);
   const foodPatterns = [
@@ -373,6 +401,7 @@ function isLikelyGibberish(text = '', menuRows = []) {
   const lower = normalize(text);
   if (!lower) return true;
   if (
+    isGreeting(text) ||
     isMenuRequest(text) ||
     hasCorrectionIntent(text) ||
     extractPayment(text) ||
@@ -404,6 +433,7 @@ function looksLikeAddress(line = '') {
     lower.includes('bangkok') ||
     lower.includes('thailand') ||
     lower.includes('chiang') ||
+    /\bcnx\b/.test(lower) ||
     lower.includes('apartment') ||
     lower.includes('building') ||
     lower.includes('room') ||
@@ -412,6 +442,15 @@ function looksLikeAddress(line = '') {
     lower.includes('floor') ||
     lower.includes('landmark') ||
     /\d/.test(line);
+}
+
+function looksLikePlainLocation(line = '') {
+  const lower = normalize(line);
+  const words = lower.split(/\s+/).filter(Boolean);
+  if (words.length < 2 || words.length > 8) return false;
+  if (!/^[a-z0-9 .,'/-]+$/i.test(line.trim())) return false;
+  if (looksLikeOrderOrMenuText(line)) return false;
+  return true;
 }
 
 function looksLikeOrderOrMenuText(text = '') {
@@ -486,6 +525,7 @@ function extractNameLine(text = '', menuRows = []) {
       hasInvalidPhoneCandidate(line) ||
       findMenuItem(line, menuRows) ||
       /^\d{1,2}$/.test(line) ||
+      isGreeting(line) ||
       looksLikeAddress(line) ||
       looksLikeOrderOrMenuText(line) ||
       lower.includes('order') ||
@@ -557,9 +597,33 @@ function applyMessageToOrder(order, text, menuRows) {
 
   const name = extractNameLine(text, menuRows);
   const address = extractAddressLine(text, menuRows);
+  const onlyAddressMissing = Boolean(
+    updated.items.length &&
+    updated.name &&
+    updated.phone &&
+    isValidPhone(updated.phone) &&
+    updated.payment_method &&
+    !updated.address
+  );
+  const fallbackAddress = !address && onlyAddressMissing
+    ? splitMessageParts(text).find((line) => {
+      const lower = normalize(line);
+      return !extractPayment(line) &&
+        !extractPhone(line) &&
+        !hasInvalidPhoneCandidate(line) &&
+        !findMenuItem(line, menuRows) &&
+        !/^\d{1,2}$/.test(line) &&
+        !lower.includes('order') &&
+        !lower.includes('wrong') &&
+        !lower.includes('name') &&
+        !lower.includes('please') &&
+        looksLikePlainLocation(line);
+    })
+    : null;
+  const resolvedAddress = address || (fallbackAddress ? cleanAddress(fallbackAddress) : null);
 
   if (name && (!updated.name || field === 'name' || (!field && isCorrection) || /\b(name|my name|customer name)\b/i.test(text))) updated.name = name;
-  if (address && (!updated.address || field === 'address' || (!field && isCorrection) || /\b(address|delivery|deliver to)\b/i.test(text))) updated.address = address;
+  if (resolvedAddress && (!updated.address || field === 'address' || (!field && isCorrection) || /\b(address|delivery|deliver to)\b/i.test(text) || onlyAddressMissing)) updated.address = resolvedAddress;
 
   return updated;
 }
@@ -789,6 +853,11 @@ async function buildReply(sql, env, senderId, text) {
   if (isPriceInquiry(text)) {
     await saveSession(sql, senderId, session);
     return priceInquiryResponse(text, menuRows);
+  }
+
+  if (isGreeting(text)) {
+    await saveSession(sql, senderId, session);
+    return greetingResponse(text);
   }
 
   if (isLikelyGibberish(text, menuRows)) {
