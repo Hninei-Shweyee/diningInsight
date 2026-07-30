@@ -3,7 +3,6 @@
     <div class="mb-5 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
       <div>
         <h2 class="text-2xl font-bold text-gray-800">Business Insights</h2>
-        <p class="text-sm text-gray-500">Sales, customers, menu performance, and promotion ideas.</p>
       </div>
 
       <div class="flex flex-col gap-3 rounded-lg bg-white p-3 shadow-sm sm:flex-row sm:items-center">
@@ -77,17 +76,7 @@
         </div>
       </div>
 
-      <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
-        <div class="rounded-lg bg-white p-6 shadow-sm">
-          <h3 class="mb-4 font-semibold text-gray-700">Most Ordered Menu Items</h3>
-          <div v-if="chartData" class="flex justify-center">
-            <div class="w-full max-w-xs sm:max-w-sm">
-              <Pie :data="chartData" :options="chartOptions" />
-            </div>
-          </div>
-          <p v-else class="py-8 text-center text-sm text-gray-400">No order data yet.</p>
-        </div>
-
+      <div class="grid grid-cols-1 gap-5 xl:grid-cols-3">
         <div class="rounded-lg bg-white p-6 shadow-sm">
           <h3 class="mb-4 font-semibold text-gray-700">Peak Ordering Time</h3>
           <p class="mb-4 text-sm text-gray-500">
@@ -95,7 +84,7 @@
           </p>
           <div class="space-y-3">
             <div
-              v-for="bucket in data.peak_ordering_periods"
+              v-for="bucket in topPeakOrderingPeriods"
               :key="bucket.period"
               class="flex items-center gap-3"
             >
@@ -103,24 +92,22 @@
               <div class="h-2 flex-1 rounded-full bg-gray-100">
                 <div
                   class="h-2 rounded-full bg-teal-500 transition-all"
-                  :style="{ width: barWidth(bucket.orders, data.peak_ordering_periods, 'orders') + '%' }"
+                  :style="{ width: barWidth(bucket.orders, topPeakOrderingPeriods, 'orders') + '%' }"
                 />
               </div>
               <span class="w-12 text-right text-xs text-gray-500">{{ bucket.orders }}</span>
             </div>
           </div>
         </div>
-      </div>
 
-      <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
-        <div class="rounded-lg bg-white p-6 shadow-sm">
+        <div class="rounded-lg bg-white p-6 shadow-sm xl:col-span-1">
           <h3 class="mb-4 font-semibold text-gray-700">Most Ordered Analysis</h3>
-          <InsightBars :items="data.most_ordered_items" empty-text="No ordered items found." />
+          <InsightBars :items="data.most_ordered_items" :limit="3" empty-text="No ordered items found." />
         </div>
 
-        <div class="rounded-lg bg-white p-6 shadow-sm">
+        <div class="rounded-lg bg-white p-6 shadow-sm xl:col-span-1">
           <h3 class="mb-4 font-semibold text-gray-700">Least Ordered Analysis</h3>
-          <InsightBars :items="data.least_ordered_items" empty-text="No ordered items found." />
+          <InsightBars :items="data.least_ordered_items" :limit="3" empty-text="No ordered items found." />
         </div>
       </div>
 
@@ -129,9 +116,9 @@
           <h3 class="font-semibold text-gray-700">Menu Popularity Analysis</h3>
           <span class="text-xs text-gray-400">{{ data.menu_popularity.length }} items</span>
         </div>
-        <div class="overflow-x-auto">
+        <div class="max-h-56 overflow-auto pr-1">
           <table class="w-full min-w-[760px] text-left text-sm">
-            <thead class="border-b border-gray-100 text-xs uppercase text-gray-400">
+            <thead class="sticky top-0 z-10 border-b border-gray-100 bg-white text-xs uppercase text-gray-400">
               <tr>
                 <th class="py-3 pr-4">Rank</th>
                 <th class="py-3 pr-4">Menu Item</th>
@@ -174,7 +161,14 @@
             :key="suggestion"
             class="rounded-lg border border-amber-100 bg-amber-50 p-4 text-sm text-gray-700"
           >
-            {{ suggestion }}
+            <p>{{ suggestion }}</p>
+            <button
+              type="button"
+              class="mt-3 rounded-md bg-brand px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-orange-600"
+              @click="createPromotion(suggestion)"
+            >
+              Create Promotion
+            </button>
           </div>
         </div>
         <p v-if="data.promotion_suggestions.length === 0" class="py-4 text-sm text-gray-400">
@@ -187,13 +181,10 @@
 
 <script setup>
 import { computed, defineComponent, h, onMounted, ref } from 'vue'
-import { Pie } from 'vue-chartjs'
-import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js'
-import ChartDataLabels from 'chartjs-plugin-datalabels'
+import { useRouter } from 'vue-router'
 import { getInsights } from '../api'
 
-ChartJS.register(ArcElement, Tooltip, Legend, ChartDataLabels)
-
+const router = useRouter()
 const loading = ref(true)
 const period = ref('all')
 const customFrom = ref('')
@@ -209,30 +200,15 @@ const periodOptions = [
   { value: 'custom', label: 'Custom Range' },
 ]
 
-const COLORS = [
-  '#FF6384',
-  '#36A2EB',
-  '#FFCE56',
-  '#4BC0C0',
-  '#9966FF',
-  '#FF9F40',
-  '#2ECC71',
-  '#E74C3C',
-  '#1ABC9C',
-  '#F39C12',
-  '#8E44AD',
-  '#3498DB',
-  '#E67E22',
-]
-
 const InsightBars = defineComponent({
   props: {
     items: { type: Array, required: true },
+    limit: { type: Number, default: null },
     emptyText: { type: String, required: true },
   },
   setup(props) {
     return () => props.items.length
-      ? h('div', { class: 'space-y-3' }, props.items.map((item, index) => h('div', {
+      ? h('div', { class: 'space-y-3' }, props.items.slice(0, props.limit ?? props.items.length).map((item, index) => h('div', {
         key: item.name,
         class: 'flex items-center gap-3',
       }, [
@@ -257,6 +233,13 @@ const InsightBars = defineComponent({
 })
 
 onMounted(fetchInsights)
+
+const topPeakOrderingPeriods = computed(() => {
+  return data.value.peak_ordering_periods
+    .slice()
+    .sort((a, b) => Number(b.orders || 0) - Number(a.orders || 0))
+    .slice(0, 2)
+})
 
 async function fetchInsights() {
   loading.value = true
@@ -293,51 +276,6 @@ function defaultInsights() {
   }
 }
 
-const chartData = computed(() => {
-  const items = data.value.most_ordered_items
-  if (!items.length) return null
-  return {
-    labels: items.map(i => i.name),
-    datasets: [{
-      data: items.map(i => i.quantity),
-      backgroundColor: COLORS.slice(0, items.length),
-      borderWidth: 2,
-      borderColor: '#fff',
-    }],
-  }
-})
-
-const chartOptions = computed(() => {
-  const items = data.value.most_ordered_items
-  const total = items.reduce((sum, i) => sum + i.quantity, 0)
-  return {
-    responsive: true,
-    plugins: {
-      legend: {
-        position: 'bottom',
-        labels: { font: { size: 11 }, padding: 16 },
-      },
-      datalabels: {
-        color: '#fff',
-        font: { weight: 'bold', size: 14 },
-        formatter: (value) => {
-          const pct = total > 0 ? ((value / total) * 100).toFixed(1) : 0
-          return pct >= 5 ? `${pct}%` : ''
-        },
-        textAlign: 'center',
-      },
-      tooltip: {
-        callbacks: {
-          label: (ctx) => {
-            const pct = total > 0 ? ((ctx.parsed / total) * 100).toFixed(1) : 0
-            return ` ${ctx.label}: ${ctx.parsed} sold (${pct}%)`
-          },
-        },
-      },
-    },
-  }
-})
-
 function barWidth(value, list, key = 'quantity') {
   const max = Math.max(...list.map(item => Number(item[key] ?? item.quantity ?? 0)), 1)
   return Math.round((Number(value || 0) / max) * 100)
@@ -352,5 +290,23 @@ function levelClass(level) {
   if (level === 'Popular') return 'bg-blue-100 text-blue-700'
   if (level === 'Moderate') return 'bg-amber-100 text-amber-700'
   return 'bg-gray-100 text-gray-600'
+}
+
+function createPromotion(suggestion) {
+  router.push({
+    name: 'AutoMessaging',
+    query: {
+      type: inferPromotionType(suggestion),
+      suggestion,
+    },
+  })
+}
+
+function inferPromotionType(suggestion) {
+  const text = suggestion.toLowerCase()
+  if (text.includes('low') || text.includes('discount')) return 'discount'
+  if (text.includes('combo')) return 'today_special'
+  if (text.includes('top seller') || text.includes('promoting')) return 'today_special'
+  return 'discount'
 }
 </script>

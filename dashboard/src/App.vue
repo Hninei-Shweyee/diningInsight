@@ -65,6 +65,11 @@
           <svg v-else-if="link.to === '/menu'" class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6h3.5"/><path d="M18 21v1"/><path d="M16.5 13H20"/>
           </svg>
+          <svg v-else-if="link.to === '/auto-messaging'" class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M21 15a4 4 0 0 1-4 4H7l-4 4V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/>
+            <path d="M8 9h8"/>
+            <path d="M8 13h5"/>
+          </svg>
           {{ link.label }}
         </RouterLink>
       </nav>
@@ -135,8 +140,8 @@ onMounted(async () => {
       appId:             import.meta.env.VITE_FIREBASE_APP_ID,
     })
   }
-  onAuthStateChanged(getAuth(), (user) => {
-    if (user) auth.setUser(user, auth.token)
+  onAuthStateChanged(getAuth(), async (user) => {
+    if (user) auth.setUser(user, await user.getIdToken())
     else auth.logout()
   })
 })
@@ -150,6 +155,7 @@ const navLinks = [
   { to: '/orders',    label: 'Orders'    },
   { to: '/customers', label: 'Customers' },
   { to: '/menu',      label: 'Menu'      },
+  { to: '/auto-messaging', label: 'Auto Messaging' },
 ]
 
 async function handleLogout() {

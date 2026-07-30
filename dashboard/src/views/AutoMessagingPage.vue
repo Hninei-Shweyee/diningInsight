@@ -1,82 +1,68 @@
 <template>
-  <div class="p-6">
+  <div class="relative min-h-[calc(100vh-4rem)] p-6">
     <div class="mb-6">
       <h2 class="text-2xl font-bold text-gray-800">Auto Messaging</h2>
-      <p class="text-gray-500 text-sm mt-0.5">Send targeted promotions to customer segments via Messenger</p>
     </div>
 
-    
-    <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6 flex items-center gap-3">
-      <span class="text-2xl">🚧</span>
-      <div>
-        <p class="font-semibold text-amber-800 text-sm">Coming in Progress 2</p>
-        <p class="text-amber-700 text-xs mt-0.5">
-          Auto Messaging will be enabled after the Claude AI integration is complete.
-          The UI below is a preview.
-        </p>
-      </div>
-    </div>
-
-    
-    <div class="opacity-50 pointer-events-none space-y-5">
-      <div class="bg-white rounded-xl p-6 shadow-sm">
-        <h3 class="font-semibold text-gray-700 mb-4">1. Select Target Segment</h3>
-        <div class="grid grid-cols-3 gap-3">
-          <div
-            v-for="segment in segments"
-            :key="segment.key"
-            class="border-2 rounded-xl p-4 text-center cursor-pointer"
-            :class="segment.key === 'vip' ? 'border-brand bg-brand/5' : 'border-gray-200'"
-          >
-            <span class="text-2xl">{{ segment.icon }}</span>
-            <p class="font-medium text-gray-800 text-sm mt-2">{{ segment.label }}</p>
-            <p class="text-xs text-gray-500 mt-1">{{ segment.desc }}</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="bg-white rounded-xl p-6 shadow-sm">
-        <h3 class="font-semibold text-gray-700 mb-4">2. Choose Message Type</h3>
-        <div class="grid grid-cols-2 gap-3">
-          <div
-            v-for="type in messageTypes"
-            :key="type.key"
-            class="border border-gray-200 rounded-lg p-4 flex items-start gap-3"
-          >
-            <span class="text-xl mt-0.5">{{ type.icon }}</span>
-            <div>
-              <p class="font-medium text-gray-800 text-sm">{{ type.label }}</p>
-              <p class="text-xs text-gray-500 mt-0.5">{{ type.desc }}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="bg-white rounded-xl p-6 shadow-sm">
-        <h3 class="font-semibold text-gray-700 mb-4">3. Message Preview</h3>
-        <div class="bg-gray-50 rounded-lg p-4 text-sm text-gray-700 leading-relaxed border border-gray-200">
-          🌟 Hi [Customer Name]! We miss you at Jasmine Restaurant.<br/>
-          Today's Special: <strong>Classic Burger only 69 THB</strong> (save 20 THB)!<br/>
-          Order now via Messenger. Limited time offer! 🍔
-        </div>
-        <button class="mt-4 w-full bg-brand text-white py-2.5 rounded-lg text-sm font-medium">
-          Send to 12 customers
-        </button>
+    <div v-if="hasPromotionSuggestion" class="absolute inset-0 flex items-center justify-center p-6">
+      <div class="w-full max-w-xl rounded-xl bg-white p-6 shadow-xl">
+        <h3 class="mb-4 font-semibold text-gray-700">Message Preview</h3>
+        <textarea
+          v-model="message"
+          rows="7"
+          class="w-full resize-none rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm leading-relaxed text-gray-700 outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20"
+        />
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-const segments = [
-  { key: 'vip',      icon: '⭐', label: 'VIP',      desc: 'Ordered 5+ times' },
-  { key: 'frequent', icon: '🔄', label: 'Frequent',  desc: 'Active last 30 days' },
-  { key: 'inactive', icon: '💤', label: 'Inactive',  desc: 'No order in 30+ days' },
-]
-const messageTypes = [
-  { key: 'today_special', icon: '🍽️', label: "Today's Special", desc: 'Announce the daily special menu' },
-  { key: 'discount',      icon: '🎁', label: 'Discount Offer',  desc: 'Send a discount promotion' },
-  { key: 'new_menu',      icon: '✨', label: 'New Menu Launch', desc: 'Introduce new menu items' },
-  { key: 'reactivate',    icon: '💌', label: 'Win Back',        desc: 'Re-engage inactive customers' },
-]
+import { computed, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
+
+const route = useRoute()
+const message = ref('')
+
+const promotionSuggestion = computed(() => String(route.query.suggestion || '').trim())
+const hasPromotionSuggestion = computed(() => Boolean(promotionSuggestion.value))
+
+watch(promotionSuggestion, () => {
+  message.value = hasPromotionSuggestion.value
+    ? promotionMessageFromSuggestion(promotionSuggestion.value)
+    : ''
+}, { immediate: true })
+
+function promotionMessageFromSuggestion(suggestion) {
+  const itemName = suggestion.match(/^(.+?)\s+(?:has low sales|is frequently ordered|is the current top seller)/i)?.[1]
+  const timeRange = suggestion.match(/between\s+([0-9:–-]+)/i)?.[1]
+
+  if (/low sales|discount/i.test(suggestion) && itemName) {
+    return `Hi [Customer Name]!
+Special offer just for you: enjoy 10% off ${itemName} today.
+Order now via Messenger before the offer ends!`
+  }
+
+  if (/combo/i.test(suggestion) && itemName) {
+    return `Hi [Customer Name]!
+Great news: ${itemName} pairs perfectly with Cola, so we are preparing a tasty combo deal for you.
+Order now via Messenger and enjoy it today!`
+  }
+
+  if (/time-based|between/i.test(suggestion)) {
+    return `Hi [Customer Name]!
+Hungry during ${timeRange || 'our quieter hours'}? Order during this time and enjoy a special promotion from us.
+Message us now to place your order!`
+  }
+
+  if (/top seller|promoting/i.test(suggestion) && itemName) {
+    return `Hi [Customer Name]!
+Customer favorite alert: ${itemName} is one of our most-loved items today.
+Order now via Messenger and enjoy it while it is fresh!`
+  }
+
+  return `Hi [Customer Name]!
+We have a special promotion ready for you today.
+Order now via Messenger. Limited time offer!`
+}
 </script>
