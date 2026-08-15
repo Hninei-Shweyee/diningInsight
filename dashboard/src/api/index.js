@@ -59,5 +59,9 @@ export const deleteMenuItem = (id)           => api.delete(`/menu/${id}`)
 
 
 export const getInsights   = (params = {})   => api.get('/insights/summary', { params })
+export const getPromotionAudiences = (params = {}) => api.get('/promotions/audiences', { params })
+export const sendPromotion = (data)          => api.post('/promotions/send', data)
+export const getPromotionHistory = ()        => api.get('/promotions')
+export const getPromotionRecipients = (id)   => api.get(`/promotions/${id}/recipients`)
 
 export const getMe         = ()              => api.get('/auth/me')
