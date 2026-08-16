@@ -1,6 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routers import orders, customers, menu, insights, auth
+from routers import orders, customers, menu, insights, auth, promotions
+from database import Base, engine
+from sqlalchemy import text
+from models import customer, order, menu as menu_model, promotion
 
 app = FastAPI(title="DiningInsight API", version="1.0.0")
 
@@ -17,6 +20,19 @@ app.include_router(customers.router)
 app.include_router(menu.router)
 app.include_router(insights.router)
 app.include_router(auth.router)
+app.include_router(promotions.router)
+
+@app.on_event("startup")
+def create_promotion_tables():
+    """Create the promotion tables for installations without migrations."""
+    Base.metadata.create_all(bind=engine)
+    # Existing installations may already have the campaign table from Feature #7.
+    with engine.begin() as connection:
+        connection.execute(text("ALTER TABLE promotion_campaigns ADD COLUMN IF NOT EXISTS message_type VARCHAR(30) NOT NULL DEFAULT 'discount'"))
+        connection.execute(text("ALTER TABLE promotion_campaigns ADD COLUMN IF NOT EXISTS menu_item_name VARCHAR(100)"))
+        connection.execute(text("ALTER TABLE promotion_campaigns ADD COLUMN IF NOT EXISTS promotion_value VARCHAR(100)"))
+        connection.execute(text("ALTER TABLE promotion_campaigns ADD COLUMN IF NOT EXISTS skipped_count INTEGER NOT NULL DEFAULT 0"))
+        connection.execute(text("ALTER TABLE promotion_campaigns ADD COLUMN IF NOT EXISTS sent_at TIMESTAMP WITH TIME ZONE"))
 
 @app.get("/")
 def root():

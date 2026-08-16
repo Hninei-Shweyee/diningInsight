@@ -23,8 +23,8 @@
       
       <div class="px-5 py-5 border-b border-white/10 flex items-center justify-between">
         <div class="flex items-center gap-3">
-          <div class="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center">
-            <img :src="logo" alt="DiningInsight" class="h-full w-full rounded-xl object-cover" />
+          <div class="h-10 w-10 flex-shrink-0 rounded-xl border border-white/20 bg-white p-0.5 shadow-sm">
+            <img :src="logo" alt="DiningInsight" class="h-full w-full object-contain" />
           </div>
           <div>
             <h1 class="text-white text-base font-bold leading-tight">DiningInsight</h1>
@@ -100,8 +100,8 @@
           class="text-gray-600 hover:text-gray-800 text-xl leading-none"
         >☰</button>
         <div class="flex items-center gap-2">
-          <div class="w-7 h-7 rounded-lg flex items-center justify-center" style="background:#f97316">
-            <img :src="logo" alt="DiningInsight" class="h-full w-full rounded-lg object-cover" />
+          <div class="h-8 w-8 flex-shrink-0 rounded-lg border border-orange-100 bg-white p-0.5">
+            <img :src="logo" alt="DiningInsight" class="h-full w-full object-contain" />
           </div>
           <span class="font-bold text-gray-800 text-sm">DiningInsight</span>
         </div>
@@ -118,7 +118,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from './stores/auth'
-import logo from './assets/di-logo.jpg'
+const logo = '/dininginsight-favicon.png'
 
 const route  = useRoute()
 const router = useRouter()
