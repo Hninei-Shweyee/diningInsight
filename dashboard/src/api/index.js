@@ -39,6 +39,12 @@ api.interceptors.response.use(
         }
       } catch (_) {}
     }
+    if (error.response?.status === 401) {
+      localStorage.removeItem('fb_token')
+      if (!window.location.pathname.includes('/login')) {
+        window.location.href = '/login'
+      }
+    }
     return Promise.reject(error)
   }
 )
