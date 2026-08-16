@@ -35,7 +35,14 @@ watch(promotionSuggestion, () => {
 
 function promotionMessageFromSuggestion(suggestion) {
   const itemName = suggestion.match(/^(.+?)\s+(?:has low sales|is frequently ordered|is the current top seller)/i)?.[1]
-  const timeRange = suggestion.match(/between\s+([0-9:–-]+)/i)?.[1]
+  const groupedLowSalesItems = suggestion.match(/menu items have low sales:\s+(.+?)\.\s+Consider/i)?.[1]
+  const timeRange = suggestion.match(/between\s+(.+?)\.\s+Consider/i)?.[1]
+
+  if (groupedLowSalesItems) {
+    return `Hi [Customer Name]!
+Special offer today: enjoy 10% off selected items including ${groupedLowSalesItems}.
+Order now via Messenger before the offer ends!`
+  }
 
   if (/low sales|discount/i.test(suggestion) && itemName) {
     return `Hi [Customer Name]!

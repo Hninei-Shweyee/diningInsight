@@ -76,38 +76,35 @@
         </div>
       </div>
 
-      <div class="grid grid-cols-1 gap-5 xl:grid-cols-3">
+      <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
         <div class="rounded-lg bg-white p-6 shadow-sm">
           <h3 class="mb-4 font-semibold text-gray-700">Peak Ordering Time</h3>
-          <p class="mb-4 text-sm text-gray-500">
-            Busiest hour: <span class="font-semibold text-gray-800">{{ data.peak_ordering_time || '-' }}</span>
-          </p>
-          <div class="space-y-3">
+          <div class="mb-5 flex flex-wrap gap-x-6 gap-y-1 text-sm text-gray-500">
+            <p>Business hours: <span class="font-semibold text-gray-800">9am - 5pm</span></p>
+            <p>Peak hour: <span class="font-semibold text-gray-800">{{ data.peak_ordering_time || '-' }}</span></p>
+          </div>
+          <div class="flex h-40 items-end gap-3 border-b border-gray-100 pb-2">
             <div
-              v-for="bucket in topPeakOrderingPeriods"
+              v-for="bucket in businessHourPeriods"
               :key="bucket.period"
-              class="flex items-center gap-3"
+              class="flex min-w-0 flex-1 flex-col items-center justify-end gap-2"
             >
-              <span class="w-24 text-xs font-medium text-gray-600">{{ bucket.period }}</span>
-              <div class="h-2 flex-1 rounded-full bg-gray-100">
+              <span class="text-xs font-semibold text-gray-600">{{ bucket.orders }}</span>
+              <div class="flex h-24 w-full items-end justify-center rounded-t bg-gray-50">
                 <div
-                  class="h-2 rounded-full bg-teal-500 transition-all"
-                  :style="{ width: barWidth(bucket.orders, topPeakOrderingPeriods, 'orders') + '%' }"
+                  class="w-7 rounded-t bg-teal-500 transition-all"
+                  :class="bucket.period === data.peak_ordering_time ? 'bg-brand' : 'bg-teal-500'"
+                  :style="{ height: verticalBarHeight(bucket.orders, businessHourPeriods) + '%' }"
                 />
               </div>
-              <span class="w-12 text-right text-xs text-gray-500">{{ bucket.orders }}</span>
+              <span class="w-full truncate text-center text-[11px] font-medium text-gray-500">{{ compactPeriod(bucket.period) }}</span>
             </div>
           </div>
         </div>
 
-        <div class="rounded-lg bg-white p-6 shadow-sm xl:col-span-1">
-          <h3 class="mb-4 font-semibold text-gray-700">Most Ordered Analysis</h3>
-          <InsightBars :items="data.most_ordered_items" :limit="3" empty-text="No ordered items found." />
-        </div>
-
-        <div class="rounded-lg bg-white p-6 shadow-sm xl:col-span-1">
+        <div class="rounded-lg bg-white p-6 shadow-sm">
           <h3 class="mb-4 font-semibold text-gray-700">Least Ordered Analysis</h3>
-          <InsightBars :items="data.least_ordered_items" :limit="3" empty-text="No ordered items found." />
+          <InsightBars :items="data.least_ordered_items" :limit="3" :max-value="10" empty-text="No low-demand items found." />
         </div>
       </div>
 
@@ -204,6 +201,7 @@ const InsightBars = defineComponent({
   props: {
     items: { type: Array, required: true },
     limit: { type: Number, default: null },
+    maxValue: { type: Number, default: null },
     emptyText: { type: String, required: true },
   },
   setup(props) {
@@ -223,7 +221,7 @@ const InsightBars = defineComponent({
           h('div', { class: 'h-1.5 rounded-full bg-gray-100' }, [
             h('div', {
               class: 'h-1.5 rounded-full bg-brand',
-              style: { width: `${barWidth(item.quantity, props.items)}%` },
+              style: { width: `${props.maxValue ? thresholdBarWidth(item.quantity, props.maxValue) : barWidth(item.quantity, props.items)}%` },
             }),
           ]),
         ]),
@@ -234,11 +232,8 @@ const InsightBars = defineComponent({
 
 onMounted(fetchInsights)
 
-const topPeakOrderingPeriods = computed(() => {
+const businessHourPeriods = computed(() => {
   return data.value.peak_ordering_periods
-    .slice()
-    .sort((a, b) => Number(b.orders || 0) - Number(a.orders || 0))
-    .slice(0, 2)
 })
 
 async function fetchInsights() {
@@ -281,14 +276,27 @@ function barWidth(value, list, key = 'quantity') {
   return Math.round((Number(value || 0) / max) * 100)
 }
 
+function thresholdBarWidth(value, maxValue) {
+  return Math.min(Math.round((Number(value || 0) / maxValue) * 100), 100)
+}
+
+function verticalBarHeight(value, list) {
+  const max = Math.max(...list.map(item => Number(item.orders || 0)), 1)
+  const percent = Math.round((Number(value || 0) / max) * 100)
+  return Math.max(percent, value > 0 ? 8 : 0)
+}
+
+function compactPeriod(period) {
+  return period.replace(/\s/g, '')
+}
+
 function formatMoney(value) {
   return Number(value || 0).toLocaleString()
 }
 
 function levelClass(level) {
-  if (level === 'Highly Popular') return 'bg-emerald-100 text-emerald-700'
-  if (level === 'Popular') return 'bg-blue-100 text-blue-700'
-  if (level === 'Moderate') return 'bg-amber-100 text-amber-700'
+  if (level === 'High Demand') return 'bg-emerald-100 text-emerald-700'
+  if (level === 'Moderate Demand') return 'bg-amber-100 text-amber-700'
   return 'bg-gray-100 text-gray-600'
 }
 

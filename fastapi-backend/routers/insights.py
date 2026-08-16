@@ -12,12 +12,8 @@ from models.customer import Customer
 
 router = APIRouter(prefix="/insights", tags=["Insights"])
 
-TIME_BUCKETS = [
-    (10, 12, "10:00-12:00"),
-    (12, 14, "12:00-14:00"),
-    (14, 17, "14:00-17:00"),
-    (17, 20, "17:00-20:00"),
-]
+BUSINESS_START_HOUR = 9
+BUSINESS_END_HOUR = 17
 
 
 def _parse_date(value: Optional[str]) -> Optional[date]:
@@ -68,17 +64,22 @@ def _fmt_hour(hr: int) -> str:
     return f"{hr - 12}pm"
 
 
-def _popularity_level(quantity: int, max_quantity: int) -> str:
-    if max_quantity <= 0:
-        return "Low Popularity"
-    ratio = quantity / max_quantity
-    if ratio >= 0.75:
-        return "Highly Popular"
-    if ratio >= 0.50:
-        return "Popular"
-    if ratio >= 0.25:
-        return "Moderate"
-    return "Low Popularity"
+def _demand_level(quantity: int) -> str:
+    if quantity >= 10:
+        return "High Demand"
+    if quantity >= 6:
+        return "Moderate Demand"
+    return "Low Demand"
+
+
+def _format_item_list(names: list[str]) -> str:
+    if not names:
+        return ""
+    if len(names) == 1:
+        return names[0]
+    if len(names) == 2:
+        return f"{names[0]} and {names[1]}"
+    return f"{', '.join(names[:-1])}, and {names[-1]}"
 
 
 @router.get("/summary")
@@ -106,8 +107,11 @@ def get_insights(
                           .order_by(desc("total_qty"))\
                           .all()
 
-    most_ordered = menu_rows[:10]
-    least_ordered = sorted(menu_rows, key=lambda row: (row.total_qty or 0, row.name or ""))[:10]
+    most_ordered = [row for row in menu_rows if int(row.total_qty or 0) >= 10]
+    least_ordered = sorted(
+        [row for row in menu_rows if int(row.total_qty or 0) <= 5],
+        key=lambda row: (row.total_qty or 0, row.name or "")
+    )
 
     totals = db.query(
         func.count(Order.id).label("total_orders"),
@@ -124,15 +128,6 @@ def get_insights(
         total_customers = db.query(func.count(Customer.id))\
                             .filter(Customer.restaurant_id == rid)\
                             .scalar()
-
-    peak_hour_row = db.query(
-        func.extract("hour", Order.ordered_at).label("hour"),
-        func.count(Order.id).label("cnt")
-    ).filter(Order.restaurant_id == rid)
-    peak_hour_row = _apply_order_date_filters(peak_hour_row, start_dt, end_dt)\
-        .group_by("hour")\
-        .order_by(desc("cnt"))\
-        .first()
 
     hourly_rows = db.query(
         func.extract("hour", Order.ordered_at).label("hour"),
@@ -170,18 +165,20 @@ def get_insights(
      .order_by(desc("total_qty"))\
      .limit(5).all()
 
-    peak_hour = None
-    if peak_hour_row:
-        h = int(peak_hour_row.hour)
-        peak_hour = f"{_fmt_hour(h)} - {_fmt_hour(h+1)}"
-
     hourly_counts = {int(row.hour): int(row.cnt) for row in hourly_rows}
-    peak_periods = []
-    for start_hour, end_hour, label in TIME_BUCKETS:
-        count = sum(hourly_counts.get(hour, 0) for hour in range(start_hour, end_hour))
-        peak_periods.append({"period": label, "orders": count})
+    peak_periods = [
+        {
+            "period": f"{_fmt_hour(hour)} - {_fmt_hour(hour + 1)}",
+            "orders": hourly_counts.get(hour, 0),
+        }
+        for hour in range(BUSINESS_START_HOUR, BUSINESS_END_HOUR)
+    ]
 
-    max_quantity = int(menu_rows[0].total_qty) if menu_rows else 0
+    peak_hour = None
+    if any(period["orders"] > 0 for period in peak_periods):
+        busiest_period = max(peak_periods, key=lambda period: period["orders"])
+        peak_hour = busiest_period["period"]
+
     menu_popularity = [
         {
             "rank": index + 1,
@@ -189,7 +186,7 @@ def get_insights(
             "quantity": int(row.total_qty or 0),
             "order_count": int(row.order_count or 0),
             "revenue": float(row.revenue or 0),
-            "popularity_level": _popularity_level(int(row.total_qty or 0), max_quantity),
+            "popularity_level": _demand_level(int(row.total_qty or 0)),
         }
         for index, row in enumerate(menu_rows)
     ]
@@ -211,8 +208,18 @@ def get_insights(
                 pair_counts[(first, second)] += 1
 
     promotion_suggestions = []
-    low_item = next((item for item in reversed(menu_popularity) if item["quantity"] > 0), None)
-    if low_item:
+    low_items = [
+        item for item in menu_popularity
+        if 0 < item["quantity"] <= 5
+    ]
+    if len(low_items) > 1:
+        item_names = _format_item_list([item["name"] for item in low_items])
+        promotion_suggestions.append(
+            f"{len(low_items)} menu items have low sales: {item_names}. "
+            "Consider offering a 10% discount or bundle promotion."
+        )
+    elif low_items:
+        low_item = low_items[0]
         promotion_suggestions.append(
             f"{low_item['name']} has low sales. Consider offering a 10% discount."
         )
@@ -223,7 +230,7 @@ def get_insights(
             f"{first} is frequently ordered with {second}. Consider creating a combo."
         )
 
-    if peak_periods:
+    if any(period["orders"] > 0 for period in peak_periods):
         low_period = min(peak_periods, key=lambda period: period["orders"])
         promotion_suggestions.append(
             f"Orders are low between {low_period['period']}. Consider a time-based promotion."
