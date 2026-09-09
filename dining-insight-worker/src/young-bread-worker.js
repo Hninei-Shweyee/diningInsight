@@ -948,6 +948,19 @@ async function handleWebhookPost(request, env) {
   return json({ success: true });
 }
 
+// Exported for unit tests. The worker's default export below remains its Cloudflare entry point.
+export {
+  normalize, titleCase, splitMessageParts, emptyOrder, totalPrice,
+  isReset, isAffirmation, hasCorrectionIntent, hasRemoveItemIntent, correctionField,
+  extractPayment, isValidPhone, extractPhone, extractQuantity, cleanAddress, cleanName,
+  isMenuRequest, greetingInfo, isGreeting, greetingResponse, formatMenu,
+  looksLikeAddress, looksLikeOrderOrMenuText, looksLikePlainLocation,
+  missingFields, confirmationText, nextQuestion, formatTelegramOrder,
+  findMenuItem, quantityNearItem, findMenuItems, hasInvalidPhoneCandidate,
+  extractAddressLine, extractNameLine, isValidName, applyMessageToOrder,
+  isPriceInquiry, priceInquiryResponse, isUnmatchedFoodRequest,
+};
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);

@@ -1,6 +1,8 @@
-import { describe, it, expect } from 'vitest'
+import { beforeAll, describe, it, expect } from 'vitest'
+import * as chat from '../young-bread-worker.js'
 
-// --- functions under test (from young-bread-worker.js) ---
+// Legacy helper copies are retained as test-case documentation only.
+// The beforeAll hook at the end binds every test to the production worker exports.
 
 function normalize(text = '') {
   return text.toLowerCase().replace(/\s+/g, ' ').trim()
@@ -1504,6 +1506,50 @@ function isUnmatchedFoodRequest(text, menuRows) {
   const found = findMenuItems(text, menuRows)
   return found.length === 0
 }
+
+// The test cases below were originally written with local copies of the helpers.
+// Rebind every helper to the worker export so they execute the production code.
+beforeAll(() => {
+  normalize = chat.normalize
+  titleCase = chat.titleCase
+  splitMessageParts = chat.splitMessageParts
+  emptyOrder = chat.emptyOrder
+  totalPrice = chat.totalPrice
+  isReset = chat.isReset
+  isAffirmation = chat.isAffirmation
+  hasCorrectionIntent = chat.hasCorrectionIntent
+  hasRemoveItemIntent = chat.hasRemoveItemIntent
+  correctionField = chat.correctionField
+  extractPayment = chat.extractPayment
+  isValidPhone = chat.isValidPhone
+  extractPhone = chat.extractPhone
+  extractQuantity = chat.extractQuantity
+  cleanAddress = chat.cleanAddress
+  cleanName = chat.cleanName
+  isMenuRequest = chat.isMenuRequest
+  greetingInfo = chat.greetingInfo
+  isGreeting = chat.isGreeting
+  greetingResponse = chat.greetingResponse
+  formatMenu = chat.formatMenu
+  looksLikeAddress = chat.looksLikeAddress
+  looksLikeOrderOrMenuText = chat.looksLikeOrderOrMenuText
+  looksLikePlainLocation = chat.looksLikePlainLocation
+  missingFields = chat.missingFields
+  confirmationText = chat.confirmationText
+  nextQuestion = chat.nextQuestion
+  formatTelegramOrder = chat.formatTelegramOrder
+  findMenuItem = chat.findMenuItem
+  quantityNearItem = chat.quantityNearItem
+  findMenuItems = chat.findMenuItems
+  hasInvalidPhoneCandidate = chat.hasInvalidPhoneCandidate
+  extractAddressLine = chat.extractAddressLine
+  extractNameLine = chat.extractNameLine
+  isValidName = chat.isValidName
+  applyMessageToOrder = chat.applyMessageToOrder
+  isPriceInquiry = chat.isPriceInquiry
+  priceInquiryResponse = chat.priceInquiryResponse
+  isUnmatchedFoodRequest = chat.isUnmatchedFoodRequest
+})
 
 describe('isUnmatchedFoodRequest', () => {
   const menuRows = [
