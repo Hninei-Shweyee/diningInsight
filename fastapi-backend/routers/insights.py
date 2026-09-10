@@ -14,6 +14,7 @@ router = APIRouter(prefix="/insights", tags=["Insights"])
 
 BUSINESS_START_HOUR = 9
 BUSINESS_END_HOUR = 17
+PEAK_ORDER_THRESHOLD = 10
 
 
 def _parse_date(value: Optional[str]) -> Optional[date]:
@@ -174,9 +175,9 @@ def get_insights(
         for hour in range(BUSINESS_START_HOUR, BUSINESS_END_HOUR)
     ]
 
+    busiest_period = max(peak_periods, key=lambda period: period["orders"])
     peak_hour = None
-    if any(period["orders"] > 0 for period in peak_periods):
-        busiest_period = max(peak_periods, key=lambda period: period["orders"])
+    if busiest_period["orders"] >= PEAK_ORDER_THRESHOLD:
         peak_hour = busiest_period["period"]
 
     menu_popularity = [

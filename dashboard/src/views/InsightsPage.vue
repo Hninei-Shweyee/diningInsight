@@ -187,6 +187,7 @@ const period = ref('all')
 const customFrom = ref('')
 const customTo = ref('')
 const data = ref(defaultInsights())
+const PEAK_ORDER_THRESHOLD = 10
 
 const periodOptions = [
   { value: 'all', label: 'All Time' },
@@ -238,9 +239,15 @@ const businessHourPeriods = computed(() => {
 
 async function fetchInsights() {
   loading.value = true
-  const res = await getInsights(buildInsightParams())
-  data.value = { ...defaultInsights(), ...res.data }
-  loading.value = false
+
+  try {
+    const res = await getInsights(buildInsightParams())
+    data.value = { ...defaultInsights(), ...res.data }
+  } catch (error) {
+    console.error('Could not load business insights.', error)
+  } finally {
+    loading.value = false
+  }
 }
 
 function buildInsightParams() {
@@ -280,10 +287,8 @@ function thresholdBarWidth(value, maxValue) {
   return Math.min(Math.round((Number(value || 0) / maxValue) * 100), 100)
 }
 
-function verticalBarHeight(value, list) {
-  const max = Math.max(...list.map(item => Number(item.orders || 0)), 1)
-  const percent = Math.round((Number(value || 0) / max) * 100)
-  return Math.max(percent, value > 0 ? 8 : 0)
+function verticalBarHeight(value) {
+  return Math.min(Math.round((Number(value || 0) / PEAK_ORDER_THRESHOLD) * 100), 100)
 }
 
 function compactPeriod(period) {
